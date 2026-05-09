@@ -193,12 +193,13 @@
       color: var(--navy); text-decoration: none; display: block;
     }
 
-    /* ── DITHERING HERO BG ── */
-    #hero-dithering-canvas {
+    /* ── FLOATING PATHS HERO BG ── */
+    .hero-paths-bg {
       position: absolute; inset: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 0; display: block;
-      mix-blend-mode: screen;
-      opacity: 0.45;
+      pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .hero-paths-bg svg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
     }
     #hero .container-xl { position: relative; z-index: 1; }
 
@@ -799,8 +800,7 @@
 
 <!-- ═══════════════════════════════════════ HERO ═════════════════════════ -->
 <section id="hero">
-  <!-- Dithering WebGL background -->
-  <canvas id="hero-dithering-canvas" aria-hidden="true"></canvas>
+  <div class="hero-paths-bg" id="hero-paths-bg" aria-hidden="true"></div>
 
   <div class="hero-glow-1" aria-hidden="true"></div>
   <div class="hero-glow-2" aria-hidden="true"></div>
@@ -1542,122 +1542,80 @@ console.log(`Live at ${txHash}`);</code></pre>
 
 </script>
 
-<!-- Dithering WebGL shader — inline, no CDN -->
+<!-- Floating paths hero background -->
 <script>
-(function () {
-  var canvas = document.getElementById('hero-dithering-canvas');
-  if (!canvas) return;
-  var gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false })
-          || canvas.getContext('experimental-webgl', { alpha: true, premultipliedAlpha: false });
-  if (!gl) return;
+(function() {
+  var container = document.getElementById('hero-paths-bg');
+  if (!container) return;
 
-  var VS = [
-    'attribute vec2 a_pos;',
-    'void main(){gl_Position=vec4(a_pos,0.0,1.0);}',
-  ].join('\n');
+  var ns = 'http://www.w3.org/2000/svg';
 
-  var FS = [
-    'precision highp float;',
-    'uniform float u_t;',
-    'uniform vec2 u_res;',
-    'uniform sampler2D u_bayer;',
-
-    // value noise
-    'float h21(vec2 p){p=fract(p*vec2(127.1,311.7));p+=dot(p,p+34.23);return fract(p.x*p.y);}',
-    'float vnoise(vec2 p){',
-    '  vec2 i=floor(p),f=fract(p),u=f*f*(3.0-2.0*f);',
-    '  return mix(mix(h21(i),h21(i+vec2(1,0)),u.x),mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),u.x),u.y);',
-    '}',
-    'float fbm(vec2 p){',
-    '  float v=0.0;',
-    '  v+=0.5000*vnoise(p);p=p*2.02+vec2(3.1,1.7);',
-    '  v+=0.2500*vnoise(p);p=p*2.03+vec2(1.5,8.3);',
-    '  v+=0.1250*vnoise(p);p=p*2.01+vec2(7.2,2.9);',
-    '  v+=0.0625*vnoise(p);',
-    '  return v/0.9375;',
-    '}',
-
-    'void main(){',
-    '  vec2 uv=gl_FragCoord.xy/u_res;',
-    '  float t=u_t*0.06;',
-
-    // plain FBM — no domain warp, just smooth organic variation
-    '  float density=fbm(uv*5.0+vec2(0.8*t,0.5*t));',
-    // scale to [0, 0.42] max → at peak only ~6/16 Bayer cells lit = sparse isolated dots
-    '  density=density*0.42;',
-
-    // 4×4 Bayer lookup — sample at texel centres
-    '  vec2 bUV=(mod(floor(gl_FragCoord.xy),4.0)+0.5)/4.0;',
-    '  float threshold=texture2D(u_bayer,bUV).r;',
-    '  float alpha=density>threshold?1.0:0.0;',
-
-    '  gl_FragColor=vec4(1.0,1.0,1.0,alpha*max(density,0.15));',
-    '}',
-  ].join('\n');
-
-  function mkShader(type, src) {
-    var s = gl.createShader(type);
-    gl.shaderSource(s, src); gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(s)); return null; }
-    return s;
+  function makePathD(i, position) {
+    var p = position;
+    return (
+      'M' + (-(380 - i*5*p)) + ' ' + (-(189 + i*6)) +
+      'C' + (-(380 - i*5*p)) + ' ' + (-(189 + i*6)) + ' ' +
+      (-(312 - i*5*p)) + ' ' + (216 - i*6) + ' ' +
+      (152 - i*5*p)    + ' ' + (343 - i*6) +
+      'C' + (616 - i*5*p) + ' ' + (470 - i*6) + ' ' +
+      (684 - i*5*p)    + ' ' + (875 - i*6) + ' ' +
+      (684 - i*5*p)    + ' ' + (875 - i*6)
+    );
   }
-  var prog = gl.createProgram();
-  gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, VS));
-  gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FS));
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(prog)); return; }
 
-  // full-screen quad
-  var buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-  var posLoc = gl.getAttribLocation(prog, 'a_pos');
-  gl.enableVertexAttribArray(posLoc);
-  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+  function buildLayer(position) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
 
-  // 4×4 Bayer matrix texture
-  var bayerTex = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, bayerTex);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 4, 4, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE,
-    new Uint8Array([0,128,32,160, 192,64,224,96, 48,176,16,144, 240,112,208,80]));
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 696 316');
+    svg.setAttribute('fill', 'none');
+    svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
 
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    for (var i = 0; i < 36; i++) {
+      var path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', makePathD(i, position));
+      path.setAttribute('stroke', 'white');
+      path.setAttribute('stroke-width', (0.5 + i * 0.03).toFixed(2));
+      var op = (0.025 + i * 0.005).toFixed(3);
+      path.setAttribute('stroke-opacity', op);
+      path._baseOp = parseFloat(op);
+      svg.appendChild(path);
+    }
 
-  var uT   = gl.getUniformLocation(prog, 'u_t');
-  var uRes = gl.getUniformLocation(prog, 'u_res');
-  var uBayer = gl.getUniformLocation(prog, 'u_bayer');
+    wrap.appendChild(svg);
+    container.appendChild(wrap);
 
-  var hero = document.getElementById('hero');
-  function resize() {
-    var w = hero.offsetWidth, h = hero.offsetHeight;
-    canvas.width = w; canvas.height = h;
-    gl.viewport(0, 0, w, h);
+    requestAnimationFrame(function() {
+      var paths = svg.querySelectorAll('path');
+      paths.forEach(function(path, i) {
+        var len = path.getTotalLength();
+        if (!len) return;
+        var dur = (20 + Math.random() * 10) * 1000;
+        var delay = -(Math.random() * dur);
+        var op = path._baseOp;
+
+        path.setAttribute('stroke-dasharray', (len * 0.3) + ' ' + len);
+        path.setAttribute('stroke-dashoffset', '0');
+
+        path.animate([
+          { strokeDashoffset: '0',          strokeOpacity: op * 0.4 },
+          { strokeDashoffset: (-len) + '',  strokeOpacity: op        },
+          { strokeDashoffset: (-len*2) + '', strokeOpacity: op * 0.4 }
+        ], {
+          duration: dur,
+          delay: delay,
+          iterations: Infinity,
+          easing: 'linear',
+          fill: 'forwards'
+        });
+      });
+    });
   }
-  resize();
-  new ResizeObserver(resize).observe(hero);
 
-  var t0 = null;
-  function frame(ts) {
-    if (!t0) t0 = ts;
-    var t = (ts - t0) / 1000;
-    gl.useProgram(prog);
-    gl.uniform1f(uT, t);
-    gl.uniform2f(uRes, canvas.width, canvas.height);
-    gl.uniform1i(uBayer, 0);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, bayerTex);
-    gl.clearColor(0,0,0,0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
-}());
+  buildLayer(1);
+  buildLayer(-1);
+})();
 </script>
 
 </body>
