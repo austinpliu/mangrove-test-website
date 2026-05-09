@@ -3,1039 +3,1662 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mangrove — Automated DeFi Trading with AI</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Mangrove — Trade on-chain with guardrails built in</title>
+  <meta name="description" content="Non-custodial on-chain trading with built-in risk controls, an AI copilot, and a no-code strategy builder. For retail traders, institutions, developers, and AI agents.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              blue: '#42a7c6',
-              lblue: '#74c3d5',
-              orange: '#ff9e18',
-              red: '#ff4713',
-            }
-          },
-          fontFamily: {
-            display: ['Space Grotesk', 'sans-serif'],
-            body: ['Inter', 'sans-serif'],
-          }
-        }
-      }
-    }
-  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    *, body { font-family: 'Inter', sans-serif; }
-    h1, h2, h3, h4, h5, .font-display { font-family: 'Space Grotesk', sans-serif; }
+    :root {
+      --navy:      #0b1423;
+      --navy-100:  #0f1c30;
+      --navy-200:  #132338;
+      --navy-300:  #1a2e47;
+      --navy-400:  #233d5e;
+      --teal:      #42a7c6;
+      --teal-lt:   #74c3d5;
+      --teal-dim:  #2d7a92;
+      --orange:    #ff9e18;
+      --coral:     #ff4713;
+      --sand:      #e8c498;
+      --ink:       #f0f4f8;
+      --ink-55:    rgba(240,244,248,0.55);
+      --ink-35:    rgba(240,244,248,0.35);
+      --ink-25:    rgba(240,244,248,0.25);
+
+      --ff-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --ff-body:    'Plus Jakarta Sans', system-ui, sans-serif;
+      --ff-mono:    'DM Mono', 'Fira Code', monospace;
+
+      --shadow-teal:   0 0 40px rgba(66,167,198,0.18), 0 2px 12px rgba(66,167,198,0.08);
+      --shadow-orange: 0 0 40px rgba(255,158,24,0.25), 0 2px 12px rgba(255,158,24,0.12);
+      --shadow-card:   0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 32px rgba(0,0,0,0.28);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--navy);
+      color: var(--ink);
+      font-family: var(--ff-body);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
 
     /* Grain overlay */
     body::before {
-      content: '';
+      content: "";
       position: fixed;
-      inset: -50%;
-      width: 200%;
-      height: 200%;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      opacity: 0.028;
+      inset: 0;
       pointer-events: none;
       z-index: 9999;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 128px 128px;
     }
 
-    /* Buttons */
-    .btn-primary {
-      background: linear-gradient(135deg, #42a7c6 0%, #74c3d5 100%);
-      color: #fff;
-      transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
+    ::selection { background: rgba(66,167,198,0.3); color: var(--ink); }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--navy); }
+    ::-webkit-scrollbar-thumb { background: var(--navy-300); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--teal-dim); }
+
+    :focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; border-radius: 4px; }
+
+    /* ── Typography helpers ── */
+    .font-display { font-family: var(--ff-display); }
+    .font-body    { font-family: var(--ff-body); }
+    .font-mono    { font-family: var(--ff-mono); }
+
+    .text-gradient-teal {
+      background: linear-gradient(135deg, var(--teal-lt) 0%, var(--teal) 60%, var(--teal-dim) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(66,167,198,0.38); }
-    .btn-primary:active { transform: translateY(0); }
-    .btn-primary:focus-visible { outline: 2px solid #42a7c6; outline-offset: 3px; }
+    .text-gradient-warm {
+      background: linear-gradient(135deg, var(--sand) 0%, var(--orange) 60%, var(--coral) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    /* ── Layout ── */
+    .container-xl {
+      width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 2.5rem;
+    }
+    @media (max-width: 768px) { .container-xl { padding: 0 1.25rem; } }
+
+    .section-pad { padding-top: 7rem; padding-bottom: 7rem; }
+    @media (max-width: 768px) { .section-pad { padding-top: 5rem; padding-bottom: 5rem; } }
+
+    /* ── Card surface ── */
+    .card-surface {
+      background: linear-gradient(145deg, rgba(19,35,56,0.9) 0%, rgba(15,28,48,0.7) 100%);
+      border: 1px solid rgba(66,167,198,0.12);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-card);
+    }
+
+    /* ── Divider line ── */
+    .section-divider {
+      position: absolute; top: 0; left: 0; right: 0; height: 1px; pointer-events: none;
+      background: linear-gradient(90deg, transparent, rgba(66,167,198,0.15), transparent);
+    }
+
+    /* ── NAV ── */
+    #nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      height: 64px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2.5rem;
+      transition: background 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease;
+      border-bottom: 1px solid transparent;
+    }
+    #nav.scrolled {
+      background: rgba(11,20,35,0.88);
+      backdrop-filter: blur(16px);
+      border-color: rgba(66,167,198,0.08);
+    }
+    @media (max-width: 768px) { #nav { padding: 0 1.25rem; } }
+
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-wordmark {
+      font-family: var(--ff-display); font-weight: 600; font-size: 1.2rem;
+      letter-spacing: -0.02em; color: var(--ink);
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 2px; }
+    @media (max-width: 900px) { .nav-links { display: none; } }
+
+    .nav-link {
+      padding: 6px 14px; border-radius: 8px; font-size: 0.875rem;
+      font-family: var(--ff-body); color: rgba(240,244,248,0.65);
+      text-decoration: none; transition: color 0.2s, background 0.2s;
+    }
+    .nav-link:hover { color: var(--ink); background: rgba(66,167,198,0.07); }
+
+    .nav-ctas { display: flex; align-items: center; gap: 10px; }
+    @media (max-width: 900px) { .nav-ctas { display: none; } }
 
     .btn-ghost {
-      border: 1px solid rgba(66,167,198,0.28);
-      color: #74c3d5;
-      transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), background 0.2s ease, border-color 0.2s ease;
+      font-family: var(--ff-body); font-size: 0.875rem; padding: 8px 16px;
+      border-radius: 10px; color: rgba(240,244,248,0.65); background: transparent;
+      border: none; cursor: pointer; text-decoration: none; transition: color 0.2s;
     }
-    .btn-ghost:hover { background: rgba(66,167,198,0.08); border-color: rgba(66,167,198,0.55); transform: translateY(-2px); }
-    .btn-ghost:active { transform: translateY(0); }
-    .btn-ghost:focus-visible { outline: 2px solid #42a7c6; outline-offset: 3px; }
+    .btn-ghost:hover { color: var(--ink); }
 
-    .nav-link { color: rgba(255,255,255,0.55); transition: color 0.15s ease; }
-    .nav-link:hover { color: rgba(255,255,255,0.92); }
-    .nav-link:focus-visible { outline: 2px solid #42a7c6; border-radius: 4px; outline-offset: 2px; }
+    .btn-primary {
+      font-family: var(--ff-body); font-size: 0.875rem; font-weight: 600;
+      padding: 9px 20px; border-radius: 12px; border: none; cursor: pointer;
+      text-decoration: none; display: inline-block;
+      background: linear-gradient(135deg, var(--orange) 0%, #ff7a18 100%);
+      color: var(--navy);
+      box-shadow: 0 0 24px rgba(255,158,24,0.22);
+      transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 32px rgba(255,158,24,0.38);
+    }
+    .btn-primary:active { transform: translateY(0); }
 
-    /* Cards */
+    /* Hamburger */
+    #nav-hamburger {
+      display: none; background: none; border: none; cursor: pointer;
+      color: var(--ink); padding: 6px;
+    }
+    @media (max-width: 900px) { #nav-hamburger { display: flex; align-items: center; } }
+
+    /* Mobile menu */
+    #mobile-menu {
+      display: none; position: fixed; top: 64px; left: 0; right: 0; z-index: 40;
+      background: rgba(11,20,35,0.96); backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(66,167,198,0.1);
+      padding: 1rem 1.25rem 1.5rem;
+      flex-direction: column; gap: 4px;
+    }
+    #mobile-menu.open { display: flex; }
+    .mobile-link {
+      display: block; padding: 12px 4px; font-family: var(--ff-body);
+      font-size: 1rem; color: rgba(240,244,248,0.8);
+      text-decoration: none; border-bottom: 1px solid rgba(66,167,198,0.08);
+    }
+    .mobile-btn-primary {
+      margin-top: 1rem; text-align: center; font-family: var(--ff-body);
+      font-weight: 600; font-size: 1rem; padding: 14px;
+      border-radius: 12px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, var(--orange) 0%, #ff7a18 100%);
+      color: var(--navy); text-decoration: none; display: block;
+    }
+
+    /* ── DITHERING HERO BG ── */
+    #hero-dithering-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0; display: block;
+      mix-blend-mode: screen;
+      opacity: 0.45;
+    }
+    #hero .container-xl { position: relative; z-index: 1; }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding-top: 7rem; padding-bottom: 5rem; position: relative; overflow: hidden;
+    }
+
+    .hero-glow-1 {
+      position: absolute; width: 600px; height: 600px;
+      top: -80px; left: 30%; transform: translateX(-50%);
+      background: radial-gradient(circle, rgba(66,167,198,0.12) 0%, transparent 70%);
+      filter: blur(100px); pointer-events: none;
+    }
+    .hero-glow-2 {
+      position: absolute; width: 400px; height: 400px;
+      bottom: 10%; right: 8%;
+      background: radial-gradient(circle, rgba(255,158,24,0.07) 0%, transparent 70%);
+      filter: blur(90px); pointer-events: none;
+    }
+
+    .hero-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 5rem; align-items: center;
+    }
+    @media (max-width: 1024px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 3rem; }
+      .hero-mockup { display: none; }
+    }
+
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px; margin-bottom: 1.5rem;
+    }
+    .eyebrow-pill {
+      font-family: var(--ff-body); font-size: 0.7rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 5px 12px; border-radius: 100px;
+      background: rgba(66,167,198,0.1); border: 1px solid rgba(66,167,198,0.2);
+      color: var(--teal-lt);
+    }
+    .pulse-dot { position: relative; display: flex; width: 8px; height: 8px; }
+    .pulse-dot::before {
+      content: ''; position: absolute; inset: 0; border-radius: 50%;
+      background: var(--teal); opacity: 0.75;
+      animation: ping 1.5s cubic-bezier(0,0,0.2,1) infinite;
+    }
+    .pulse-dot::after {
+      content: ''; position: relative; display: inline-flex;
+      width: 8px; height: 8px; border-radius: 50%; background: var(--teal-lt);
+    }
+    @keyframes ping {
+      75%, 100% { transform: scale(2); opacity: 0; }
+    }
+
+    .hero-h1 {
+      font-family: var(--ff-display); font-size: clamp(2.6rem, 5vw, 4.25rem);
+      font-weight: 700; line-height: 1.05; letter-spacing: -0.03em;
+      color: var(--ink); margin-bottom: 1.5rem;
+    }
+    .hero-sub {
+      font-family: var(--ff-body); font-size: 1.125rem; line-height: 1.7;
+      color: var(--ink-55); max-width: 480px; margin-bottom: 2.5rem;
+    }
+
+    /* Waitlist form */
+    .waitlist-form { display: flex; gap: 10px; max-width: 460px; }
+    @media (max-width: 500px) { .waitlist-form { flex-direction: column; } }
+
+    .input-email {
+      flex: 1; font-family: var(--ff-body); font-size: 0.875rem;
+      padding: 14px 18px; border-radius: 12px;
+      background: rgba(19,35,56,0.8); border: 1px solid rgba(66,167,198,0.15);
+      color: var(--ink); outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-email::placeholder { color: rgba(240,244,248,0.3); }
+    .input-email:focus {
+      border-color: rgba(66,167,198,0.45);
+      box-shadow: 0 0 0 3px rgba(66,167,198,0.08);
+    }
+
+    .form-note { margin-top: 10px; font-size: 0.75rem; color: var(--ink-25); }
+
+    /* Social proof */
+    .social-proof { display: flex; align-items: center; gap: 14px; margin-top: 2.5rem; }
+    .avatars { display: flex; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--ff-body); font-size: 0.6875rem; font-weight: 500;
+      border: 2px solid rgba(66,167,198,0.15); color: rgba(116,195,213,0.9);
+      margin-left: -8px;
+    }
+    .avatars .avatar:first-child { margin-left: 0; }
+    .proof-text { font-family: var(--ff-body); font-size: 0.875rem; color: rgba(240,244,248,0.45); }
+    .proof-text strong { color: rgba(240,244,248,0.75); font-weight: 500; }
+
+    /* Form success */
+    .form-success {
+      display: none; align-items: center; gap: 10px; padding: 14px 20px;
+      border-radius: 12px; background: rgba(66,167,198,0.1);
+      border: 1px solid rgba(66,167,198,0.25);
+      font-family: var(--ff-body); font-size: 0.875rem; color: var(--teal-lt);
+    }
+    .form-success.visible { display: flex; }
+
+    /* ── TRADING MOCKUP ── */
+    .mockup-card {
+      border-radius: 20px; overflow: hidden; max-width: 540px; margin-left: auto;
+      background: linear-gradient(145deg, rgba(19,35,56,0.95) 0%, rgba(11,20,35,0.98) 100%);
+      border: 1px solid rgba(66,167,198,0.15);
+      box-shadow: 0 0 80px rgba(66,167,198,0.08), 0 24px 64px rgba(0,0,0,0.5);
+    }
+    .mockup-bar {
+      display: flex; align-items: center; gap: 8px; padding: 12px 18px;
+      border-bottom: 1px solid rgba(66,167,198,0.1);
+    }
+    .traffic-light { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-title {
+      margin-left: 8px; font-family: var(--ff-mono); font-size: 0.75rem;
+      color: rgba(116,195,213,0.6);
+    }
+    .mockup-chart { position: relative; padding: 1.25rem; height: 180px; overflow: hidden; }
+    .chart-price {
+      position: absolute; top: 14px; right: 20px; text-align: right;
+    }
+    .chart-price-val {
+      font-family: var(--ff-mono); font-size: 1.5rem; font-weight: 500;
+      color: var(--teal-lt);
+    }
+    .chart-price-label { font-size: 0.7rem; color: rgba(240,244,248,0.4); margin-top: 2px; }
+
+    .chart-path-line {
+      stroke-dasharray: 2000; stroke-dashoffset: 2000;
+      transition: stroke-dashoffset 2.2s cubic-bezier(0.25,0.46,0.45,0.94) 0.8s;
+    }
+    .chart-path-area { opacity: 0; transition: opacity 1s ease 1.4s; }
+    .mockup-card.animate .chart-path-line { stroke-dashoffset: 0; }
+    .mockup-card.animate .chart-path-area { opacity: 1; }
+
+    .mockup-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid rgba(66,167,198,0.1);
+    }
+    .stat-cell {
+      padding: 10px 16px; text-align: center;
+      border-right: 1px solid rgba(66,167,198,0.08);
+    }
+    .stat-cell:last-child { border-right: none; }
+    .stat-val { font-family: var(--ff-mono); font-size: 0.9375rem; font-weight: 500; }
+    .stat-lbl { font-size: 0.6875rem; color: rgba(240,244,248,0.4); margin-top: 2px; }
+
+    .mockup-badges { display: flex; gap: 8px; padding: 12px 18px; flex-wrap: wrap; }
+    .risk-badge {
+      font-family: var(--ff-mono); font-size: 0.6875rem; padding: 5px 10px; border-radius: 6px;
+      background: rgba(66,167,198,0.08); border: 1px solid rgba(66,167,198,0.15);
+      color: rgba(116,195,213,0.8);
+    }
+
+    /* ── SECTION COMMON ── */
+    .eyebrow-label {
+      font-family: var(--ff-body); font-size: 0.7rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      display: block; margin-bottom: 12px;
+    }
+    .section-h2 {
+      font-family: var(--ff-display); font-size: clamp(2rem,4vw,3.25rem);
+      font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; color: var(--ink);
+    }
+    .section-sub {
+      margin-top: 1rem; font-size: 1.125rem; line-height: 1.7; color: var(--ink-55);
+    }
+
+    /* ── AUDIENCE CARDS ── */
+    .audience-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+    }
+    @media (max-width: 1100px) { .audience-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 600px) { .audience-grid { grid-template-columns: 1fr; } }
+
+    .audience-card {
+      border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 18px;
+      position: relative; overflow: hidden; cursor: pointer;
+      background: linear-gradient(145deg, rgba(19,35,56,0.85) 0%, rgba(11,20,35,0.7) 100%);
+      border: 1px solid rgba(66,167,198,0.1);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 32px rgba(0,0,0,0.25);
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), border-color 0.25s;
+    }
+    .audience-card:hover { transform: translateY(-5px); }
+    .audience-card:hover .card-hover-glow { opacity: 1; }
+    .audience-card:hover .card-top-line { opacity: 1; }
+
+    .card-hover-glow {
+      position: absolute; inset: 0; pointer-events: none; opacity: 0;
+      transition: opacity 0.4s;
+      border-radius: 20px;
+    }
+    .card-top-line {
+      position: absolute; top: 0; left: 2rem; right: 2rem; height: 1px;
+      opacity: 0; transition: opacity 0.4s;
+    }
+
+    .card-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .audience-card:hover .card-icon { transform: scale(1.1); }
+
+    .card-label {
+      font-family: var(--ff-body); font-size: 0.6875rem; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .card-h3 {
+      font-family: var(--ff-display); font-size: 1.2rem; font-weight: 600;
+      letter-spacing: -0.02em; line-height: 1.25; color: var(--ink); margin-top: 4px;
+    }
+    .card-body { font-family: var(--ff-body); font-size: 0.875rem; line-height: 1.65; color: var(--ink-55); }
+
+    .card-features { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+    .card-feature {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--ff-body); font-size: 0.8125rem; color: rgba(240,244,248,0.65);
+    }
+
+    .card-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--ff-body); font-size: 0.8125rem; font-weight: 500;
+      text-decoration: none; margin-top: 10px;
+      transition: gap 0.2s;
+    }
+    .card-link:hover { gap: 10px; }
+
+    /* ── HOW IT WORKS ── */
+    .steps-list { display: flex; flex-direction: column; gap: 7rem; }
+
+    .step-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: center;
+    }
+    @media (max-width: 900px) { .step-grid { grid-template-columns: 1fr; gap: 2.5rem; } }
+
+    .step-num {
+      font-family: var(--ff-display); font-size: 3.5rem; font-weight: 700;
+      letter-spacing: -0.04em; line-height: 1;
+      color: rgba(66,167,198,0.12); user-select: none;
+    }
+    .step-pill {
+      display: inline-block; font-family: var(--ff-body); font-size: 0.6875rem;
+      font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 4px 12px; border-radius: 100px;
+      background: rgba(66,167,198,0.08); border: 1px solid rgba(66,167,198,0.2);
+      color: var(--teal-lt); margin-left: 12px;
+    }
+    .step-h3 {
+      font-family: var(--ff-display); font-size: clamp(1.75rem,3.5vw,2.5rem);
+      font-weight: 700; letter-spacing: -0.025em; line-height: 1.2;
+      color: var(--ink); margin: 1.25rem 0 1rem;
+    }
+    .step-body { font-family: var(--ff-body); font-size: 1rem; line-height: 1.75; color: var(--ink-55); }
+
+    /* Step visuals */
+    .step-visual {
+      border-radius: 16px; overflow: hidden; position: relative;
+      background: linear-gradient(145deg, rgba(19,35,56,0.98) 0%, rgba(11,20,35,0.95) 100%);
+      border: 1px solid rgba(66,167,198,0.12);
+      aspect-ratio: 16/10; padding: 1.25rem; display: flex; flex-direction: column; gap: 10px;
+    }
+    .visual-chrome {
+      font-family: var(--ff-mono); font-size: 0.7rem; color: rgba(116,195,213,0.5);
+      margin-bottom: 4px;
+    }
+    .rule-block {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px;
+    }
+    .rule-kw {
+      font-family: var(--ff-mono); font-size: 0.7rem; font-weight: 500;
+      width: 36px; flex-shrink: 0;
+    }
+    .rule-text { font-family: var(--ff-body); font-size: 0.75rem; color: rgba(240,244,248,0.7); }
+
+    .backtest-stats {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 10px;
+    }
+    .bt-stat-val { font-family: var(--ff-mono); font-size: 0.8125rem; font-weight: 500; color: var(--teal-lt); }
+    .bt-stat-lbl { font-size: 0.6875rem; color: rgba(240,244,248,0.35); margin-top: 2px; }
+
+    .deploy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .deploy-cell {
+      padding: 10px 12px; border-radius: 8px;
+      background: rgba(66,167,198,0.05); border: 1px solid rgba(66,167,198,0.1);
+    }
+    .deploy-val { font-family: var(--ff-mono); font-size: 0.875rem; font-weight: 500; }
+    .deploy-lbl { font-size: 0.6875rem; color: rgba(240,244,248,0.35); margin-top: 2px; }
+    .deploy-btns { display: flex; gap: 8px; margin-top: 8px; }
+    .deploy-btn {
+      flex: 1; padding: 8px; border-radius: 8px; font-family: var(--ff-body);
+      font-size: 0.75rem; font-weight: 500; cursor: pointer; border: 1px solid;
+      transition: opacity 0.2s;
+    }
+    .deploy-btn:hover { opacity: 0.8; }
+
+    .step-backtest-path {
+      stroke-dasharray: 1200; stroke-dashoffset: 1200;
+      transition: stroke-dashoffset 2s cubic-bezier(0.25,0.46,0.45,0.94) 0.3s;
+    }
+    .step-backtest-path.bench {
+      stroke-dasharray: 800; stroke-dashoffset: 800;
+      transition: stroke-dashoffset 1.8s cubic-bezier(0.25,0.46,0.45,0.94) 0.1s;
+    }
+    .step-visual.animate .step-backtest-path { stroke-dashoffset: 0; }
+
+    /* ── FEATURES GRID ── */
+    .features-grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr; grid-template-rows: auto auto;
+      gap: 18px;
+    }
+    @media (max-width: 900px) { .features-grid { grid-template-columns: 1fr; } }
+
     .feat-card {
-      background: linear-gradient(135deg, rgba(18,30,51,0.85) 0%, rgba(13,26,45,0.6) 100%);
-      border: 1px solid rgba(28,45,71,0.9);
-      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), border-color 0.25s ease, box-shadow 0.25s ease;
+      border-radius: 20px; padding: 28px; overflow: hidden; position: relative;
+      background: linear-gradient(145deg, rgba(19,35,56,0.9) 0%, rgba(11,20,35,0.75) 100%);
+      border: 1px solid rgba(66,167,198,0.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      transition: border-color 0.3s;
     }
-    .feat-card:hover {
-      transform: translateY(-5px);
-      border-color: rgba(66,167,198,0.28);
-      box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 0 40px rgba(66,167,198,0.05);
+    .feat-card:hover { border-color: rgba(66,167,198,0.22); }
+    .feat-card:hover .feat-hover-glow { opacity: 1; }
+    .feat-hover-glow {
+      position: absolute; inset: 0; pointer-events: none; opacity: 0;
+      transition: opacity 0.5s; border-radius: 20px;
     }
+    .feat-card.large { grid-column: 1; grid-row: 1 / span 2; }
+    @media (max-width: 900px) { .feat-card.large { grid-column: auto; grid-row: auto; } }
 
-    /* Tabs */
-    .tab-btn { color: rgba(255,255,255,0.45); transition: color 0.15s ease, background 0.15s ease; }
-    .tab-btn.active { color: #42a7c6; background: rgba(66,167,198,0.1); border-color: rgba(66,167,198,0.28) !important; }
-    .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.04); }
-    .tab-btn:focus-visible { outline: 2px solid #42a7c6; outline-offset: 2px; }
-
-    /* Partner logos */
-    .partner { opacity: 0.38; filter: grayscale(1) brightness(1.6); transition: opacity 0.2s ease, filter 0.2s ease; }
-    .partner:hover { opacity: 0.75; filter: grayscale(0) brightness(1); }
-
-    /* Animations */
-    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-    @keyframes pulse-dot { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
-    .float { animation: float 6s ease-in-out infinite; }
-    .float-2 { animation: float 5s ease-in-out infinite 1s; }
-    .float-3 { animation: float 4s ease-in-out infinite 0.5s; }
-    .pulse-dot { animation: pulse-dot 2.5s ease-in-out infinite; }
-
-    /* Hero bg */
-    .hero-bg {
-      background:
-        radial-gradient(ellipse 70% 55% at 62% 38%, rgba(66,167,198,0.07) 0%, transparent 70%),
-        radial-gradient(ellipse 40% 50% at 88% 15%, rgba(116,195,213,0.05) 0%, transparent 60%),
-        radial-gradient(ellipse 45% 40% at 8% 82%, rgba(255,71,19,0.035) 0%, transparent 60%),
-        #07111e;
+    .feat-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+    }
+    .feat-proof {
+      font-family: var(--ff-body); font-size: 0.6875rem; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px;
+    }
+    .feat-h3 {
+      font-family: var(--ff-display); font-size: 1.375rem; font-weight: 600;
+      letter-spacing: -0.02em; color: var(--ink); margin-bottom: 12px;
+    }
+    .feat-body { font-family: var(--ff-body); font-size: 0.875rem; line-height: 1.7; color: var(--ink-55); margin-bottom: 16px; }
+    .feat-quote {
+      font-family: var(--ff-body); font-size: 0.8125rem; font-style: italic;
+      line-height: 1.65; color: rgba(240,244,248,0.38);
+      padding-left: 14px;
     }
 
-    /* Inputs */
-    .email-input {
-      background: rgba(13,26,45,0.9);
-      border: 1px solid rgba(28,45,71,0.9);
-      color: #fff;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    /* ── TRUST STRIP ── */
+    .trust-grid {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 16px;
     }
-    .email-input:focus { outline: none; border-color: rgba(66,167,198,0.45); box-shadow: 0 0 0 3px rgba(66,167,198,0.1); }
-    .email-input::placeholder { color: rgba(255,255,255,0.22); }
+    @media (max-width: 900px) { .trust-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 500px) { .trust-grid { grid-template-columns: 1fr; } }
 
-    /* Grid pattern */
-    .grid-pat {
-      background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
-      background-size: 60px 60px;
+    .trust-card {
+      border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
+      position: relative; overflow: hidden;
+      background: linear-gradient(145deg, rgba(19,35,56,0.7) 0%, rgba(11,20,35,0.5) 100%);
+      border: 1px solid rgba(66,167,198,0.08);
+    }
+    .trust-card:hover .card-top-line { opacity: 1; }
+    .trust-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .trust-label { font-family: var(--ff-body); font-size: 0.875rem; font-weight: 600; color: var(--ink); }
+    .trust-body { font-family: var(--ff-body); font-size: 0.8125rem; line-height: 1.65; color: rgba(240,244,248,0.48); }
+
+    /* ── LOGO WALL ── */
+    .logo-row { display: flex; flex-direction: column; gap: 14px; }
+    .logo-row-header {
+      display: flex; align-items: center; gap: 16px;
+    }
+    .logo-row-label {
+      font-family: var(--ff-body); font-size: 0.7rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(116,195,213,0.4); white-space: nowrap;
+    }
+    .logo-row-line { flex: 1; height: 1px; background: rgba(66,167,198,0.08); }
+    .logo-row-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+    .logo-pill {
+      font-family: var(--ff-body); font-size: 0.875rem; font-weight: 500;
+      padding: 10px 22px; border-radius: 12px;
+      background: rgba(19,35,56,0.5); border: 1px solid rgba(66,167,198,0.1);
+      color: rgba(240,244,248,0.35);
+    }
+
+    /* ── DEVELOPER TEASER ── */
+    .dev-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4.5rem; align-items: center;
+    }
+    @media (max-width: 900px) { .dev-grid { grid-template-columns: 1fr; } }
+
+    .dev-features { display: flex; flex-direction: column; gap: 12px; margin: 2rem 0; }
+    .dev-feature {
+      display: flex; align-items: center; gap: 12px;
+      font-family: var(--ff-body); font-size: 0.875rem; color: rgba(240,244,248,0.65);
+    }
+    .dev-btn {
+      font-family: var(--ff-body); font-size: 0.875rem; font-weight: 500;
+      padding: 12px 24px; border-radius: 12px; border: 1px solid rgba(255,158,24,0.25);
+      background: rgba(255,158,24,0.1); color: var(--orange); cursor: pointer;
+      text-decoration: none; display: inline-block;
+      transition: background 0.2s, transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .dev-btn:hover { background: rgba(255,158,24,0.16); transform: translateY(-2px); }
+
+    .dev-link {
+      font-family: var(--ff-body); font-size: 0.875rem; color: rgba(240,244,248,0.4);
+      text-decoration: none; margin-left: 16px; transition: color 0.2s;
+    }
+    .dev-link:hover { color: rgba(240,244,248,0.7); }
+
+    /* Code block */
+    .code-block {
+      border-radius: 20px; overflow: hidden;
+      background: rgba(9,14,22,0.95);
+      border: 1px solid rgba(66,167,198,0.12);
+      box-shadow: 0 0 60px rgba(66,167,198,0.06), 0 24px 56px rgba(0,0,0,0.45);
+    }
+    .code-chrome {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; border-bottom: 1px solid rgba(66,167,198,0.08);
+    }
+    .code-filename { font-family: var(--ff-mono); font-size: 0.75rem; color: rgba(116,195,213,0.4); }
+    .code-copy {
+      font-family: var(--ff-mono); font-size: 0.75rem; color: rgba(116,195,213,0.3);
+      background: none; border: none; cursor: pointer; transition: color 0.2s;
+    }
+    .code-copy:hover { color: rgba(116,195,213,0.7); }
+    .code-pre {
+      padding: 20px; font-family: var(--ff-mono); font-size: 0.75rem;
+      line-height: 1.7; color: rgba(240,244,248,0.8); overflow-x: auto;
+    }
+    .kw  { color: var(--teal-lt); }
+    .str { color: var(--orange); }
+    .num { color: var(--teal); }
+    .cmt { color: rgba(240,244,248,0.3); font-style: italic; }
+
+    /* ── FINAL CTA ── */
+    #waitlist-section {
+      padding: 8rem 0; position: relative; overflow: hidden; text-align: center;
+    }
+    .cta-glow {
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse at 50% 60%, rgba(66,167,198,0.07) 0%, transparent 65%);
+    }
+    .cta-h2 {
+      font-family: var(--ff-display); font-size: clamp(2.5rem,6vw,4rem);
+      font-weight: 700; letter-spacing: -0.035em; line-height: 1.0; color: var(--ink);
+      margin-bottom: 1.25rem;
+    }
+    .cta-sub {
+      font-size: 1.125rem; line-height: 1.7; color: var(--ink-55); max-width: 480px;
+      margin: 0 auto 2.5rem;
+    }
+    .cta-form { display: flex; gap: 12px; max-width: 460px; margin: 0 auto; }
+    @media (max-width: 500px) { .cta-form { flex-direction: column; } }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid rgba(66,167,198,0.1);
+      padding: 4rem 0 2.5rem;
+      background: linear-gradient(to bottom, transparent, rgba(9,14,22,0.5));
+    }
+    .footer-grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 3.5rem;
+    }
+    @media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 500px) { .footer-grid { grid-template-columns: 1fr; gap: 2rem; } }
+
+    .footer-brand { grid-column: 1; }
+    .footer-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; text-decoration: none; }
+    .footer-logo-name { font-family: var(--ff-display); font-weight: 600; font-size: 1.1rem; letter-spacing: -0.02em; color: var(--ink); }
+    .footer-desc { font-family: var(--ff-body); font-size: 0.875rem; line-height: 1.65; color: rgba(240,244,248,0.4); max-width: 260px; }
+    .footer-socials { display: flex; gap: 8px; margin-top: 1.25rem; }
+    .social-btn {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(66,167,198,0.06); border: 1px solid rgba(66,167,198,0.1);
+      color: rgba(240,244,248,0.4); text-decoration: none;
+      transition: color 0.2s, background 0.2s;
+    }
+    .social-btn:hover { color: var(--teal-lt); background: rgba(66,167,198,0.12); }
+
+    .footer-col-head {
+      font-family: var(--ff-body); font-size: 0.7rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(116,195,213,0.45); margin-bottom: 16px;
+    }
+    .footer-col-links { display: flex; flex-direction: column; gap: 10px; list-style: none; }
+    .footer-col-links a {
+      font-family: var(--ff-body); font-size: 0.875rem; color: rgba(240,244,248,0.4);
+      text-decoration: none; transition: color 0.2s;
+    }
+    .footer-col-links a:hover { color: rgba(240,244,248,0.75); }
+
+    .footer-bottom {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      padding-top: 2rem; border-top: 1px solid rgba(66,167,198,0.07);
+    }
+    .footer-copy { font-family: var(--ff-body); font-size: 0.75rem; color: var(--ink-25); }
+    .footer-legal { display: flex; gap: 20px; }
+    .footer-legal a {
+      font-family: var(--ff-body); font-size: 0.75rem; color: var(--ink-25);
+      text-decoration: none; transition: color 0.2s;
+    }
+    .footer-legal a:hover { color: rgba(240,244,248,0.5); }
+
+    /* ── REVEAL ANIMATIONS ── */
+    .reveal {
+      opacity: 0; transform: translateY(28px);
+      transition: opacity 0.65s cubic-bezier(0.25,0.46,0.45,0.94),
+                  transform 0.65s cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-d1 { transition-delay: 0.08s; }
+    .reveal-d2 { transition-delay: 0.16s; }
+    .reveal-d3 { transition-delay: 0.24s; }
+    .reveal-d4 { transition-delay: 0.32s; }
+
+    /* Hero animation */
+    .hero-reveal {
+      opacity: 0; transform: translateY(20px);
+      animation: heroUp 0.65s cubic-bezier(0.25,0.46,0.45,0.94) forwards;
+    }
+    @keyframes heroUp { to { opacity: 1; transform: translateY(0); } }
+    .hero-d1 { animation-delay: 0.1s; }
+    .hero-d2 { animation-delay: 0.2s; }
+    .hero-d3 { animation-delay: 0.3s; }
+    .hero-d4 { animation-delay: 0.4s; }
+    .hero-d5 { animation-delay: 0.5s; }
+
+    /* Status badge in deploy visual */
+    .status-active {
+      font-family: var(--ff-body); font-size: 0.7rem; font-weight: 500;
+      padding: 3px 10px; border-radius: 100px;
+      background: rgba(39,201,63,0.12); color: #27c93f;
     }
   </style>
 </head>
-<body class="bg-[#07111e] text-white antialiased overflow-x-hidden">
+<body>
 
-  <!-- ═══ NAV ═══ -->
-  <nav class="fixed top-0 inset-x-0 z-50 border-b border-white/[0.055] bg-[#07111e]/80 backdrop-blur-xl">
-    <div class="max-w-7xl mx-auto px-6 h-[62px] flex items-center justify-between gap-8">
-      <a href="#" aria-label="Mangrove home" class="flex-shrink-0">
-        <img src="brand_assets/Mangrove Final Logos/Horiz/Mangrove-Horiz-FullColor-WhiteType.svg"
-             alt="Mangrove" class="h-7 w-auto">
-      </a>
-      <div class="hidden md:flex items-center gap-7 text-sm font-medium">
-        <a href="#platform" class="nav-link">Platform</a>
-        <a href="#institutions" class="nav-link">Institutions</a>
-        <a href="#developers" class="nav-link">Developers</a>
-        <a href="#agents" class="nav-link">Agents</a>
-        <a href="#" class="nav-link">Docs</a>
-      </div>
-      <div class="flex items-center gap-3 flex-shrink-0">
-        <a href="#" class="btn-ghost hidden sm:inline-flex px-4 py-2 rounded-lg text-sm font-medium">Log in</a>
-        <a href="#waitlist" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">Get Early Access</a>
-      </div>
-    </div>
+<!-- ═══════════════════════════════════════ NAV ══════════════════════════ -->
+<nav id="nav">
+  <a href="/" class="nav-logo" aria-label="Mangrove home">
+    <!-- Logo mark SVG -->
+    <svg width="28" height="28" viewBox="0 0 792 792" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M762.6 592.5h-77.8c0-73.9-42.3-118.2-91.2-169.6-52.8-55.4-112.7-118.3-112.7-223.3h77.8c0 73.9 42.3 118.3 91.2 169.6 52.8 55.4 112.7 118.3 112.7 223.3Z" fill="#ff9e18"/>
+      <path d="M323.7 592.5h-77.8c0-105 59.9-167.8 112.7-223.3 49-51.4 91.2-95.8 91.2-169.6h77.8c0 105-59.9 167.8-112.7 223.3-48.9 51.4-91.2 95.7-91.2 169.6Z" fill="#ff4713"/>
+      <path d="M546 592.5h-77.8c0-73.9-42.3-118.2-91.2-169.6-52.8-55.4-112.7-118.3-112.7-223.3h77.8c0 73.9 42.3 118.3 91.2 169.6 52.8 55.4 112.7 118.3 112.7 223.3Z" fill="#74c3d5"/>
+      <path d="M107.2 592.5H29.4c0-105 59.9-167.8 112.7-223.3 49-51.4 91.2-95.8 91.2-169.6h77.8c0 105-59.9 167.8-112.7 223.3-48.9 51.4-91.2 95.7-91.2 169.6Z" fill="#42a7c6"/>
+    </svg>
+    <span class="nav-logo-wordmark">Mangrove</span>
+  </a>
+
+  <nav class="nav-links" aria-label="Main">
+    <a href="#product" class="nav-link">Product</a>
+    <a href="#pricing" class="nav-link">Pricing</a>
+    <a href="#developers" class="nav-link">Developers</a>
+    <a href="#learn" class="nav-link">Learn</a>
+    <a href="#company" class="nav-link">Company</a>
   </nav>
 
-  <!-- ═══ HERO ═══ -->
-  <section class="hero-bg grid-pat relative min-h-screen flex items-center pt-[62px]">
+  <div class="nav-ctas">
+    <a href="#" class="btn-ghost">Sign in</a>
+    <a href="#waitlist-section" class="btn-primary">Join waitlist</a>
+  </div>
 
-    <!-- (tree removed) -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none" style="z-index:0;display:none">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" style="width:100%;height:100%" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <filter id="mg-blur-lg" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="28"/></filter>
-          <filter id="mg-blur-md" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="10"/></filter>
-          <filter id="mg-blur-sm" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="3.5"/></filter>
-          <linearGradient id="mg-left-fade" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%"   stop-color="#07111e" stop-opacity="1"/>
-            <stop offset="30%"  stop-color="#07111e" stop-opacity="0.96"/>
-            <stop offset="52%"  stop-color="#07111e" stop-opacity="0.62"/>
-            <stop offset="70%"  stop-color="#07111e" stop-opacity="0.18"/>
-            <stop offset="85%"  stop-color="#07111e" stop-opacity="0.04"/>
-            <stop offset="100%" stop-color="#07111e" stop-opacity="0"/>
-          </linearGradient>
-          <radialGradient id="mg-moon" cx="76%" cy="17%" r="34%">
-            <stop offset="0%"   stop-color="#42a7c6" stop-opacity="0.16"/>
-            <stop offset="45%"  stop-color="#74c3d5" stop-opacity="0.07"/>
-            <stop offset="100%" stop-color="#42a7c6" stop-opacity="0"/>
-          </radialGradient>
-          <linearGradient id="mg-water" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stop-color="#0c1f32"/>
-            <stop offset="100%" stop-color="#040c16"/>
-          </linearGradient>
-          <radialGradient id="mg-water-light" cx="62%" cy="0%" r="55%">
-            <stop offset="0%"   stop-color="#1e4a6a" stop-opacity="0.35"/>
-            <stop offset="100%" stop-color="#0c1f32" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
+  <button id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="currentColor" id="hamburger-icon">
+      <rect x="2" y="5" width="18" height="2" rx="1"/>
+      <rect x="2" y="10" width="18" height="2" rx="1"/>
+      <rect x="2" y="15" width="12" height="2" rx="1"/>
+    </svg>
+  </button>
+</nav>
 
-        <!-- Stars -->
-        <g fill="white">
-          <circle cx="95"   cy="42"  r="0.8" opacity="0.50"/><circle cx="178" cy="75"  r="0.6" opacity="0.38"/>
-          <circle cx="285"  cy="30"  r="0.9" opacity="0.58"/><circle cx="342" cy="92"  r="0.7" opacity="0.42"/>
-          <circle cx="415"  cy="52"  r="1.0" opacity="0.48"/><circle cx="505" cy="26"  r="0.6" opacity="0.52"/>
-          <circle cx="585"  cy="82"  r="0.8" opacity="0.38"/><circle cx="648" cy="40"  r="0.9" opacity="0.58"/>
-          <circle cx="722"  cy="65"  r="0.6" opacity="0.42"/><circle cx="782" cy="22"  r="0.7" opacity="0.48"/>
-          <circle cx="918"  cy="20"  r="0.8" opacity="0.52"/><circle cx="998" cy="45"  r="0.6" opacity="0.38"/>
-          <circle cx="1062" cy="28"  r="0.9" opacity="0.58"/><circle cx="1142" cy="62" r="0.7" opacity="0.48"/>
-          <circle cx="1218" cy="38"  r="0.8" opacity="0.52"/><circle cx="1302" cy="75" r="0.6" opacity="0.38"/>
-          <circle cx="1378" cy="46"  r="0.9" opacity="0.48"/><circle cx="1415" cy="92" r="0.7" opacity="0.42"/>
-          <circle cx="162"  cy="142" r="0.6" opacity="0.32"/><circle cx="252" cy="115" r="0.8" opacity="0.38"/>
-          <circle cx="455"  cy="132" r="0.7" opacity="0.32"/><circle cx="535" cy="102" r="0.9" opacity="0.38"/>
-          <circle cx="62"   cy="108" r="0.7" opacity="0.35"/><circle cx="320" cy="155" r="0.5" opacity="0.30"/>
-          <circle cx="1348" cy="128" r="0.8" opacity="0.38"/><circle cx="1398" cy="155" r="0.6" opacity="0.32"/>
-        </g>
+<!-- Mobile menu -->
+<div id="mobile-menu" role="navigation" aria-label="Mobile menu">
+  <a href="#product" class="mobile-link">Product</a>
+  <a href="#pricing" class="mobile-link">Pricing</a>
+  <a href="#developers" class="mobile-link">Developers</a>
+  <a href="#learn" class="mobile-link">Learn</a>
+  <a href="#company" class="mobile-link">Company</a>
+  <a href="#waitlist-section" class="mobile-btn-primary">Join waitlist</a>
+</div>
 
-        <!-- Moon atmospheric glow -->
-        <ellipse cx="1095" cy="158" rx="385" ry="265" fill="url(#mg-moon)" filter="url(#mg-blur-lg)"/>
+<!-- ═══════════════════════════════════════ HERO ═════════════════════════ -->
+<section id="hero">
+  <!-- Dithering WebGL background -->
+  <canvas id="hero-dithering-canvas" aria-hidden="true"></canvas>
 
-        <!-- Tree ambient ground glow -->
-        <ellipse cx="958" cy="628" rx="480" ry="90" fill="#1a3020" opacity="0.18" filter="url(#mg-blur-lg)"/>
+  <div class="hero-glow-1" aria-hidden="true"></div>
+  <div class="hero-glow-2" aria-hidden="true"></div>
 
-        <!-- Water -->
-        <rect x="0" y="638" width="1440" height="262" fill="url(#mg-water)"/>
-        <rect x="0" y="638" width="1440" height="140" fill="url(#mg-water-light)"/>
-        <rect x="0" y="636" width="1440" height="2"   fill="#42a7c6" opacity="0.07"/>
-        <rect x="0" y="639" width="1440" height="1"   fill="#1a3550" opacity="0.45"/>
-        <!-- Water ripple lines -->
-        <line x1="610" y1="658" x2="890" y2="660" stroke="#183045" stroke-width="1" opacity="0.35"/>
-        <line x1="645" y1="676" x2="875" y2="678" stroke="#142840" stroke-width="1" opacity="0.27"/>
-        <line x1="668" y1="695" x2="858" y2="697" stroke="#112240" stroke-width="1" opacity="0.22"/>
-        <line x1="575" y1="716" x2="915" y2="718" stroke="#0e1e38" stroke-width="1" opacity="0.18"/>
-        <line x1="695" y1="742" x2="835" y2="744" stroke="#0b1a32" stroke-width="1" opacity="0.14"/>
+  <div class="container-xl">
+    <div class="hero-grid">
 
-        <!-- ═══ MANGROVE TREE ═══ -->
-
-        <!-- Prop roots – back layer (depth) -->
-        <path d="M 966 542 C 1052 508 1152 548 1192 598 C 1205 618 1208 635 1208 642" stroke="#0c1810" stroke-width="5"   fill="none" stroke-linecap="round" opacity="0.70"/>
-        <path d="M 968 558 C 1072 528 1195 562 1242 608 C 1258 626 1262 638 1262 642" stroke="#0b1610" stroke-width="4"   fill="none" stroke-linecap="round" opacity="0.60"/>
-        <path d="M 952 548 C 895 518 808 558 782 605 C 772 622 770 636 770 642"       stroke="#0c1810" stroke-width="4"   fill="none" stroke-linecap="round" opacity="0.66"/>
-        <path d="M 950 562 C 882 530 778 575 752 615 C 742 628 740 638 740 642"       stroke="#0b1610" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="0.56"/>
-
-        <!-- Prop roots – front layer -->
-        <path d="M 963 508 C 1005 488 1072 522 1108 578 C 1120 598 1124 622 1124 642" stroke="#111e15" stroke-width="9"   fill="none" stroke-linecap="round"/>
-        <path d="M 965 524 C 1025 496 1112 538 1148 588 C 1162 610 1166 630 1166 642" stroke="#0f1c13" stroke-width="8"   fill="none" stroke-linecap="round"/>
-        <path d="M 958 516 C 922 496 878 534 862 586 C 854 610 852 628 852 642"       stroke="#111e15" stroke-width="8"   fill="none" stroke-linecap="round"/>
-        <path d="M 955 528 C 908 502 848 546 830 590 C 820 614 818 630 818 642"       stroke="#0f1c13" stroke-width="7"   fill="none" stroke-linecap="round"/>
-        <path d="M 952 505 C 888 475 768 522 742 590 C 732 618 730 634 730 642"       stroke="#0e1b12" stroke-width="6"   fill="none" stroke-linecap="round" opacity="0.86"/>
-        <path d="M 967 498 C 1045 470 1165 498 1225 560 C 1245 584 1250 620 1250 642" stroke="#0e1b12" stroke-width="6"   fill="none" stroke-linecap="round" opacity="0.83"/>
-        <!-- Sub-roots off main props -->
-        <path d="M 1050 568 C 1055 592 1058 620 1060 642" stroke="#0e1a12" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-        <path d="M 1090 590 C 1094 612 1096 630 1097 642" stroke="#0d1911" stroke-width="3"   fill="none" stroke-linecap="round"/>
-        <path d="M 900 568 C 896 592 894 620 893 642"     stroke="#0e1a12" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-        <path d="M 862 582 C 858 606 856 628 855 642"     stroke="#0d1911" stroke-width="3"   fill="none" stroke-linecap="round"/>
-
-        <!-- Main trunk -->
-        <path d="M 946 642 C 948 580 952 505 957 405 C 961 315 958 215 961 85" stroke="#111e15" stroke-width="28" fill="none" stroke-linecap="round"/>
-        <!-- Moonlit rim highlight -->
-        <path d="M 952 642 C 954 580 957 505 962 405 C 966 315 963 215 966 85" stroke="#1e3225" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.55"/>
-
-        <!-- Primary branches -->
-        <path d="M 959 305 C 935 272 892 248 852 222 C 812 196 768 178 725 162" stroke="#111e15" stroke-width="19" fill="none" stroke-linecap="round"/>
-        <path d="M 962 262 C 995 235 1050 210 1102 185 C 1148 162 1192 148 1228 132" stroke="#111e15" stroke-width="18" fill="none" stroke-linecap="round"/>
-        <path d="M 959 208 C 935 175 900 152 862 130 C 832 112 800 102 768 90"        stroke="#0f1c13" stroke-width="15" fill="none" stroke-linecap="round"/>
-        <path d="M 962 192 C 990 165 1028 144 1070 124 C 1102 108 1134 98 1165 88"    stroke="#0f1c13" stroke-width="14" fill="none" stroke-linecap="round"/>
-        <path d="M 957 352 C 922 330 880 312 840 300 C 802 288 764 280 732 272"        stroke="#101c14" stroke-width="15" fill="none" stroke-linecap="round"/>
-        <path d="M 964 382 C 1002 360 1050 340 1095 322 C 1135 306 1172 296 1208 288"  stroke="#101c14" stroke-width="14" fill="none" stroke-linecap="round"/>
-
-        <!-- Secondary branches -->
-        <path d="M 835 225 C 808 205 778 188 752 172" stroke="#0e1a12" stroke-width="11" fill="none" stroke-linecap="round"/>
-        <path d="M 795 208 C 768 186 742 168 718 152" stroke="#0d1911" stroke-width="9"  fill="none" stroke-linecap="round"/>
-        <path d="M 745 168 C 722 148 702 130 685 115" stroke="#0c1810" stroke-width="8"  fill="none" stroke-linecap="round"/>
-        <path d="M 858 132 C 835 110 815 92  798 75"  stroke="#0c1810" stroke-width="9"  fill="none" stroke-linecap="round"/>
-        <path d="M 818 108 C 800 88  784 70  770 54"  stroke="#0b1710" stroke-width="7"  fill="none" stroke-linecap="round"/>
-        <path d="M 1205 135 C 1232 120 1260 105 1285 92"  stroke="#0e1a12" stroke-width="10" fill="none" stroke-linecap="round"/>
-        <path d="M 1168 115 C 1190 92  1212 72  1232 55"  stroke="#0d1911" stroke-width="8"  fill="none" stroke-linecap="round"/>
-        <path d="M 1138 95  C 1150 72  1162 52  1172 35"  stroke="#0c1810" stroke-width="7"  fill="none" stroke-linecap="round"/>
-        <path d="M 762 275 C 736 258 710 240 688 228" stroke="#0d1911" stroke-width="10" fill="none" stroke-linecap="round"/>
-        <path d="M 728 270 C 702 252 678 236 658 222" stroke="#0c1810" stroke-width="8"  fill="none" stroke-linecap="round"/>
-        <path d="M 1198 292 C 1228 272 1256 255 1280 242" stroke="#0d1911" stroke-width="9" fill="none" stroke-linecap="round"/>
-        <path d="M 1172 282 C 1185 258 1198 238 1208 218" stroke="#0c1810" stroke-width="7" fill="none" stroke-linecap="round"/>
-
-        <!-- Tertiary branches -->
-        <path d="M 686 118 C 668 98  652 80  640 65"  stroke="#0b1710" stroke-width="5.5" fill="none" stroke-linecap="round"/>
-        <path d="M 640 65  C 624 45  610 28  600 15"  stroke="#0a1610" stroke-width="4"   fill="none" stroke-linecap="round"/>
-        <path d="M 768 54  C 752 34  738 18  728 5"   stroke="#0a1610" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-        <path d="M 798 72  C 784 52  772 34  764 18"  stroke="#0b1710" stroke-width="5"   fill="none" stroke-linecap="round"/>
-        <path d="M 1285 92 C 1302 75 1318 58 1332 45" stroke="#0a1610" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-        <path d="M 1260 105 C 1272 82 1282 62 1290 45" stroke="#0b1710" stroke-width="4" fill="none" stroke-linecap="round"/>
-
-        <!-- ═══ CANOPY CLUSTERS ═══ -->
-        <!-- Far left -->
-        <ellipse cx="618" cy="52"  rx="62" ry="44" fill="#0d1e15"/><ellipse cx="600" cy="42"  rx="47" ry="35" fill="#0f2218"/>
-        <ellipse cx="638" cy="58"  rx="52" ry="38" fill="#0c1c14"/><ellipse cx="610" cy="32"  rx="38" ry="28" fill="#122618"/>
-        <!-- Left upper -->
-        <ellipse cx="798" cy="68"  rx="78" ry="54" fill="#0e2016"/><ellipse cx="776" cy="56"  rx="62" ry="44" fill="#122618"/>
-        <ellipse cx="820" cy="74"  rx="68" ry="48" fill="#0d1e15"/><ellipse cx="790" cy="46"  rx="52" ry="37" fill="#142e1c"/>
-        <ellipse cx="808" cy="84"  rx="56" ry="39" fill="#0c1c14"/>
-        <!-- Left mid -->
-        <ellipse cx="722" cy="158" rx="90" ry="60" fill="#0e2016"/><ellipse cx="702" cy="145" rx="72" ry="48" fill="#122618"/>
-        <ellipse cx="742" cy="165" rx="78" ry="54" fill="#0d1e15"/><ellipse cx="715" cy="135" rx="62" ry="42" fill="#142e1c"/>
-        <!-- Left lower -->
-        <ellipse cx="695" cy="225" rx="80" ry="54" fill="#0e2016"/><ellipse cx="678" cy="213" rx="64" ry="44" fill="#122618"/>
-        <ellipse cx="715" cy="232" rx="68" ry="48" fill="#0d1e15"/><ellipse cx="655" cy="218" rx="56" ry="38" fill="#0c1c14"/>
-        <!-- Center top (densest) -->
-        <ellipse cx="962" cy="72"  rx="132" ry="86" fill="#0d2018"/><ellipse cx="938" cy="58"  rx="106" ry="68" fill="#132a1a"/>
-        <ellipse cx="986" cy="64"  rx="115" ry="75" fill="#0e2318"/><ellipse cx="958" cy="42"  rx="92"  ry="60" fill="#162e20"/>
-        <ellipse cx="948" cy="85"  rx="118" ry="76" fill="#0c1c14"/><ellipse cx="975" cy="52"  rx="85"  ry="56" fill="#1a3622"/>
-        <!-- Center mid -->
-        <ellipse cx="960" cy="212" rx="86"  ry="56" fill="#0e2218"/><ellipse cx="942" cy="198" rx="68"  ry="44" fill="#132a1a"/>
-        <ellipse cx="978" cy="220" rx="72"  ry="49" fill="#0c1c14"/>
-        <!-- Right upper -->
-        <ellipse cx="1152" cy="85"  rx="102" ry="68" fill="#0d2018"/><ellipse cx="1132" cy="72"  rx="82" ry="55" fill="#132a1a"/>
-        <ellipse cx="1172" cy="92"  rx="90"  ry="60" fill="#0e2318"/><ellipse cx="1148" cy="58"  rx="72" ry="48" fill="#162e20"/>
-        <!-- Right extreme -->
-        <ellipse cx="1272" cy="68"  rx="75"  ry="52" fill="#0d2018"/><ellipse cx="1252" cy="56"  rx="59" ry="42" fill="#122618"/>
-        <ellipse cx="1292" cy="76"  rx="65"  ry="46" fill="#0c1c14"/><ellipse cx="1330" cy="42"  rx="52" ry="36" fill="#0d1e15"/>
-        <!-- Right lower -->
-        <ellipse cx="1262" cy="240" rx="84"  ry="56" fill="#0e2016"/><ellipse cx="1242" cy="228" rx="67" ry="45" fill="#122618"/>
-        <ellipse cx="1282" cy="248" rx="72"  ry="50" fill="#0d1e15"/>
-
-        <!-- Hanging aerial rootlets -->
-        <g stroke="#091710" stroke-width="1.2" fill="none" opacity="0.55">
-          <line x1="745" y1="185" x2="742" y2="248"/><line x1="758" y1="175" x2="755" y2="234"/>
-          <line x1="842" y1="235" x2="840" y2="295"/><line x1="858" y1="228" x2="856" y2="284"/>
-          <line x1="972" y1="102" x2="970" y2="168"/><line x1="988" y1="90"  x2="986" y2="152"/>
-          <line x1="1148" y1="112" x2="1146" y2="175"/><line x1="1165" y1="102" x2="1163" y2="162"/>
-          <line x1="695" y1="245" x2="692" y2="298"/><line x1="712" y1="238" x2="710" y2="290"/>
-        </g>
-
-        <!-- Water reflections -->
-        <path d="M 946 642 C 948 695 952 745 956 788" stroke="#162a1c" stroke-width="14" fill="none" stroke-linecap="round" opacity="0.28" filter="url(#mg-blur-sm)"/>
-        <path d="M 958 642 C 935 658 892 668 860 674" stroke="#122418" stroke-width="7"  fill="none" opacity="0.18" filter="url(#mg-blur-sm)"/>
-        <path d="M 960 642 C 988 656 1035 664 1068 670" stroke="#122418" stroke-width="6" fill="none" opacity="0.18" filter="url(#mg-blur-sm)"/>
-        <path d="M 1105 642 C 1102 662 1095 680 1090 698" stroke="#0e1c12" stroke-width="4.5" fill="none" opacity="0.15" filter="url(#mg-blur-sm)"/>
-        <path d="M 876 642 C 879 662 886 680 890 698"  stroke="#0e1c12" stroke-width="4.5" fill="none" opacity="0.15" filter="url(#mg-blur-sm)"/>
-        <ellipse cx="960" cy="672" rx="195" ry="22" fill="#1a3828" opacity="0.30" filter="url(#mg-blur-md)"/>
-        <ellipse cx="960" cy="656" rx="108" ry="12" fill="#1e4530" opacity="0.20" filter="url(#mg-blur-sm)"/>
-        <!-- Moonlight path on water -->
-        <ellipse cx="1105" cy="705" rx="235" ry="42" fill="#1a3a5a" opacity="0.14" filter="url(#mg-blur-md)"/>
-
-        <!-- Left fade overlay (text readability) -->
-        <rect x="0" y="0" width="1440" height="900" fill="url(#mg-left-fade)"/>
-      </svg>
-    </div>
-
-    <div class="max-w-7xl mx-auto px-6 py-24 w-full grid lg:grid-cols-2 gap-16 items-center">
-
-      <!-- Copy -->
-      <div class="relative z-10">
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#42a7c6]/22 bg-[#42a7c6]/[0.07] mb-8">
-          <span class="w-1.5 h-1.5 rounded-full bg-[#42a7c6] pulse-dot"></span>
-          <span class="text-[#74c3d5] text-xs font-medium tracking-wide">Powered by Anthropic Claude</span>
+      <!-- Left: copy -->
+      <div>
+        <div class="hero-eyebrow hero-reveal">
+          <span class="eyebrow-pill">Now in private beta</span>
+          <span class="pulse-dot" aria-hidden="true"></span>
         </div>
 
-        <h1 class="font-display font-bold text-[52px] lg:text-[64px] xl:text-[72px] leading-[1.04] tracking-[-0.03em] text-white mb-6">
-          Stand firm amid<br>
-          <span style="background:linear-gradient(135deg,#42a7c6 0%,#74c3d5 60%,#ff9e18 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">seismic shifts.</span>
+        <h1 class="hero-h1 hero-reveal hero-d1">
+          Trade on-chain<br>
+          <em class="text-gradient-teal" style="font-style:italic;">with guardrails</em><br>
+          built in
         </h1>
 
-        <p class="text-white/52 text-lg leading-[1.72] max-w-[520px] mb-10">
-          The smarter, safer way to automate your trading.
+        <p class="hero-sub hero-reveal hero-d2">
+          Non-custodial strategies with built-in risk controls, an AI copilot that reasons through market conditions, and a no-code builder anyone can use.
         </p>
 
-        <div class="flex flex-wrap gap-4 mb-14">
-          <a href="#waitlist" class="btn-primary px-7 py-3.5 rounded-xl text-[15px] font-semibold">Start for Free</a>
-          <a href="#platform" class="btn-ghost px-7 py-3.5 rounded-xl text-[15px] font-medium flex items-center gap-2">
-            See how it works
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        <div class="hero-reveal hero-d3">
+          <div class="waitlist-form" id="hero-form-wrap">
+            <input type="email" class="input-email" id="hero-email" placeholder="Enter your email" autocomplete="email" required>
+            <button class="btn-primary" onclick="submitWaitlist('hero')">Join waitlist</button>
+          </div>
+          <div class="form-success" id="hero-success">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="9" fill="#42a7c6" fill-opacity="0.2"/><path d="M5 9l3 3 5-5" stroke="#74c3d5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            You're on the list — we'll be in touch.
+          </div>
+          <p class="form-note">No credit card. No custody. Open beta rolling out Q3 2025.</p>
+        </div>
+
+        <div class="social-proof hero-reveal hero-d4">
+          <div class="avatars">
+            <div class="avatar" style="background:#1a2e47;">AT</div>
+            <div class="avatar" style="background:#132338;">MK</div>
+            <div class="avatar" style="background:#1a2e47;">JR</div>
+            <div class="avatar" style="background:#0f1c30;">SL</div>
+          </div>
+          <p class="proof-text"><strong>2,400+</strong> traders on the waitlist</p>
+        </div>
+      </div>
+
+      <!-- Right: mockup -->
+      <div class="hero-reveal hero-d2">
+        <div class="mockup-card hero-mockup" id="hero-mockup">
+          <div class="mockup-bar">
+            <div class="traffic-light" style="background:#ff5f56;"></div>
+            <div class="traffic-light" style="background:#ffbd2e;"></div>
+            <div class="traffic-light" style="background:#27c93f;"></div>
+            <span class="mockup-title">mangrove.ai — strategy builder</span>
+          </div>
+
+          <div class="mockup-chart">
+            <!-- Grid -->
+            <svg style="position:absolute;inset:0;width:100%;height:100%;" preserveAspectRatio="none">
+              <defs><pattern id="grid" width="40" height="32" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 32" fill="none" stroke="rgba(66,167,198,0.05)" stroke-width="1"/></pattern></defs>
+              <rect width="100%" height="100%" fill="url(#grid)"/>
             </svg>
-          </a>
-        </div>
 
-        <!-- Stats row -->
-        <div class="flex flex-wrap items-center gap-8">
-          <div>
-            <div class="font-display font-bold text-[22px] text-white">Non-Custodial</div>
-            <div class="text-white/38 text-sm mt-0.5">Your keys, always</div>
-          </div>
-          <div class="w-px h-10 bg-white/10"></div>
-          <div>
-            <div class="font-display font-bold text-[22px] text-white">$500M+</div>
-            <div class="text-white/38 text-sm mt-0.5">Strategies backtested</div>
-          </div>
-          <div class="w-px h-10 bg-white/10"></div>
-          <div>
-            <div class="font-display font-bold text-[22px] text-white">SOC 2</div>
-            <div class="text-white/38 text-sm mt-0.5">Certification in progress</div>
-          </div>
-        </div>
-      </div>
+            <!-- Chart -->
+            <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 540 180" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="tealGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#42a7c6" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="#74c3d5" stop-opacity="1"/>
+                </linearGradient>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#42a7c6" stop-opacity="0.12"/>
+                  <stop offset="100%" stop-color="#42a7c6" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path class="chart-path-area" d="M0,155 C40,148 70,120 110,108 C150,96 170,112 210,92 C250,72 270,80 310,60 C350,40 370,65 410,45 C450,25 475,38 510,22 C528,14 538,18 540,14 L540,180 L0,180 Z" fill="url(#areaGrad)"/>
+              <path class="chart-path-line" d="M0,155 C40,148 70,120 110,108 C150,96 170,112 210,92 C250,72 270,80 310,60 C350,40 370,65 410,45 C450,25 475,38 510,22 C528,14 538,18 540,14" fill="none" stroke="url(#tealGrad)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
 
-      <!-- Dashboard mockup -->
-      <div class="relative hidden lg:flex items-center justify-center">
-        <div class="absolute inset-0 bg-[radial-gradient(ellipse_65%_65%_at_50%_50%,rgba(66,167,198,0.1),transparent)] pointer-events-none"></div>
-
-        <div class="float w-full max-w-[420px]">
-          <!-- Main card -->
-          <div class="rounded-2xl border border-[#1c2d47] bg-[#0d1a2d] overflow-hidden"
-               style="box-shadow:0 28px 80px rgba(0,0,0,0.55),0 0 0 1px rgba(255,255,255,0.04),inset 0 1px 0 rgba(255,255,255,0.05);">
-            <!-- Card top bar -->
-            <div class="px-5 py-3.5 border-b border-white/[0.055] flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <span class="w-2 h-2 rounded-full bg-[#42a7c6] pulse-dot"></span>
-                <span class="text-sm font-medium font-display text-white/78">AI Strategy Builder</span>
-              </div>
-              <div class="flex gap-1.5">
-                <div class="w-2.5 h-2.5 rounded-full bg-[#ff4713]/55"></div>
-                <div class="w-2.5 h-2.5 rounded-full bg-[#ff9e18]/55"></div>
-                <div class="w-2.5 h-2.5 rounded-full bg-[#42a7c6]/55"></div>
-              </div>
-            </div>
-            <!-- Chart bars -->
-            <div class="px-5 pt-5 pb-3">
-              <div class="flex items-end gap-[3px] h-28 mb-4">
-                <div class="flex-1 rounded-t bg-[#42a7c6]/14" style="height:44%"></div>
-                <div class="flex-1 rounded-t bg-[#42a7c6]/18" style="height:60%"></div>
-                <div class="flex-1 rounded-t bg-[#42a7c6]/14" style="height:37%"></div>
-                <div class="flex-1 rounded-t bg-[#42a7c6]/22" style="height:74%"></div>
-                <div class="flex-1 rounded-t bg-[#42a7c6]/18" style="height:52%"></div>
-                <div class="flex-1 rounded-t bg-[#42a7c6]/14" style="height:39%"></div>
-                <div class="flex-1 rounded-t bg-[#42a7c6]/28" style="height:85%"></div>
-                <div class="flex-1 rounded-t bg-[#42a7c6]/22" style="height:68%"></div>
-                <div class="flex-1 rounded-t bg-[#42a7c6]/18" style="height:50%"></div>
-                <div class="flex-1 rounded-t" style="height:96%;background:linear-gradient(to top,#42a7c6,#74c3d5)"></div>
-              </div>
-              <!-- Strategy rows -->
-              <div class="space-y-2">
-                <div class="flex items-center justify-between p-3 rounded-xl bg-[#42a7c6]/[0.07] border border-[#42a7c6]/14">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-[#42a7c6]/14 flex items-center justify-center">
-                      <svg class="w-3.5 h-3.5 text-[#42a7c6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                    </div>
-                    <div>
-                      <div class="text-xs font-medium text-white/78">ETH / USDC</div>
-                      <div class="text-[10px] text-white/32">Range strategy</div>
-                    </div>
-                  </div>
-                  <div class="text-right">
-                    <div class="text-sm font-semibold text-[#42a7c6] font-display">+12.4%</div>
-                    <div class="text-[10px] text-white/32">30d return</div>
-                  </div>
-                </div>
-                <div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.025] border border-white/[0.055]">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-[#ff9e18]/10 flex items-center justify-center">
-                      <svg class="w-3.5 h-3.5 text-[#ff9e18]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    </div>
-                    <div>
-                      <div class="text-xs font-medium text-white/78">Risk Guardrails</div>
-                      <div class="text-[10px] text-white/32">Max drawdown: 5%</div>
-                    </div>
-                  </div>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#ff9e18]/10 text-[#ff9e18] font-semibold">Active</span>
-                </div>
-                <div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.025] border border-white/[0.055]">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-[#74c3d5]/10 flex items-center justify-center">
-                      <svg class="w-3.5 h-3.5 text-[#74c3d5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                    </div>
-                    <div>
-                      <div class="text-xs font-medium text-white/78">Non-Custodial</div>
-                      <div class="text-[10px] text-white/32">Your wallet, your keys</div>
-                    </div>
-                  </div>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#74c3d5]/10 text-[#74c3d5] font-semibold">Secured</span>
-                </div>
-              </div>
+            <div class="chart-price">
+              <div class="chart-price-val">+18.4%</div>
+              <div class="chart-price-label">30-day return</div>
             </div>
           </div>
 
-          <!-- Floating chips -->
-          <div class="float-2 absolute -top-5 -right-8 rounded-xl border border-[#1c2d47] bg-[#0d1a2d] px-3 py-2.5"
-               style="box-shadow:0 12px 32px rgba(0,0,0,0.5);">
-            <div class="flex items-center gap-2">
-              <div class="w-5 h-5 rounded-full flex items-center justify-center" style="background:linear-gradient(135deg,#ff9e18,#ff4713)">
-                <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-xs font-medium text-white/78 font-display">Strategy deployed</span>
-            </div>
+          <div class="mockup-stats">
+            <div class="stat-cell"><div class="stat-val" style="color:#74c3d5;">73%</div><div class="stat-lbl">Win rate</div></div>
+            <div class="stat-cell"><div class="stat-val" style="color:#ff9e18;">−3.2%</div><div class="stat-lbl">Max drawdown</div></div>
+            <div class="stat-cell"><div class="stat-val" style="color:#74c3d5;">2.41</div><div class="stat-lbl">Sharpe ratio</div></div>
           </div>
-          <div class="float-3 absolute -bottom-5 -left-8 rounded-xl border border-[#1c2d47] bg-[#0d1a2d] px-3 py-2.5"
-               style="box-shadow:0 12px 32px rgba(0,0,0,0.5);">
-            <div class="text-[10px] text-white/35 mb-0.5">AI Copilot</div>
-            <div class="text-xs font-medium text-white/65">Optimizing for lower slippage...</div>
+
+          <div class="mockup-badges">
+            <span class="risk-badge">Stop loss: 2%</span>
+            <span class="risk-badge">Max exposure: 10%</span>
+            <span class="risk-badge">No leverage</span>
           </div>
         </div>
       </div>
+
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- ═══ AUDIENCE TABS ═══ -->
-  <section id="platform" class="py-24" style="background:linear-gradient(180deg,#07111e 0%,#091520 50%,#07111e 100%)">
-    <div class="max-w-7xl mx-auto px-6">
-      <div class="text-center mb-12">
-        <h2 class="font-display font-bold text-[40px] lg:text-[52px] tracking-[-0.03em] text-white mb-4">
-          Built for every market participant
-        </h2>
-        <p class="text-white/48 text-lg max-w-2xl mx-auto leading-[1.72]">
-          Whether you're a first-time DeFi user, a trading desk, or an AI agent — Mangrove meets you where you are.
-        </p>
-      </div>
-
-      <!-- Tabs -->
-      <div class="flex flex-wrap justify-center gap-2 mb-12">
-        <button class="tab-btn border border-transparent px-5 py-2.5 rounded-full text-sm font-medium active" onclick="switchTab('users',this)">Everyday Users</button>
-        <button class="tab-btn border border-transparent px-5 py-2.5 rounded-full text-sm font-medium" onclick="switchTab('institutions',this)">Institutions</button>
-        <button class="tab-btn border border-transparent px-5 py-2.5 rounded-full text-sm font-medium" onclick="switchTab('developers',this)">Developers</button>
-        <button class="tab-btn border border-transparent px-5 py-2.5 rounded-full text-sm font-medium" onclick="switchTab('agents',this)">AI Agents</button>
-      </div>
-
-      <!-- Tab panels -->
-      <div id="tab-users" class="tab-panel grid md:grid-cols-2 gap-10 items-center">
-        <div>
-          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#42a7c6]/10 border border-[#42a7c6]/18 mb-6">
-            <span class="text-[#42a7c6] text-[11px] font-semibold uppercase tracking-widest">Everyday Users</span>
-          </div>
-          <h3 class="font-display font-bold text-[32px] lg:text-[40px] tracking-[-0.03em] text-white mb-4">Sophisticated strategies, zero coding</h3>
-          <p class="text-white/52 leading-[1.72] mb-8">Build automated trading strategies with our AI copilot. Tell it your goals, risk tolerance, and market view — it handles the rest. Your assets stay in your wallet at all times.</p>
-          <ul class="space-y-3.5 mb-8">
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#42a7c6]/14 border border-[#42a7c6]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#42a7c6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">No-code strategy builder with AI guidance</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#42a7c6]/14 border border-[#42a7c6]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#42a7c6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">Built-in risk guardrails — never over-expose</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#42a7c6]/14 border border-[#42a7c6]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#42a7c6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">Backtest against historical data before going live</span>
-            </li>
-          </ul>
-          <a href="#waitlist" class="btn-primary inline-flex px-6 py-3 rounded-xl text-sm font-semibold">Get early access</a>
-        </div>
-        <!-- AI chat mockup -->
-        <div class="rounded-2xl border border-[#1c2d47] bg-[#0d1a2d] p-6"
-             style="box-shadow:0 16px 48px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.04);">
-          <div class="space-y-4">
-            <div class="flex gap-3 items-start">
-              <div class="w-7 h-7 rounded-full bg-[#42a7c6]/18 border border-[#42a7c6]/28 flex items-center justify-center flex-shrink-0 text-[11px] font-bold text-[#42a7c6]">U</div>
-              <div class="bg-white/[0.045] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-white/65 flex-1">
-                I want to earn yield on ETH but limit my downside to 10%
-              </div>
-            </div>
-            <div class="flex gap-3 items-start justify-end">
-              <div class="bg-[#42a7c6]/10 border border-[#42a7c6]/18 rounded-2xl rounded-tr-sm px-4 py-3 text-sm text-[#74c3d5] flex-1 max-w-xs">
-                Got it. I'll set up a concentrated liquidity strategy on Uniswap v3 with a 10% drawdown limit and auto-rebalancing. Backtesting shows +8.2% avg APY over 6 months.
-              </div>
-              <div class="w-7 h-7 rounded-full bg-[#42a7c6] flex items-center justify-center flex-shrink-0">
-                <img src="brand_assets/Mangrove Final Logos/Mark/Mangrove-M-White.svg" alt="" class="w-4 h-4">
-              </div>
-            </div>
-            <div class="flex gap-3 items-start">
-              <div class="w-7 h-7 rounded-full bg-[#42a7c6]/18 border border-[#42a7c6]/28 flex items-center justify-center flex-shrink-0 text-[11px] font-bold text-[#42a7c6]">U</div>
-              <div class="bg-white/[0.045] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-white/65 flex-1">Looks good. Deploy it.</div>
-            </div>
-            <div class="flex items-center gap-2 pt-1">
-              <div class="h-px flex-1 bg-[#42a7c6]/14"></div>
-              <span class="text-[11px] text-[#42a7c6]/55 font-medium">Strategy deployed to your wallet</span>
-              <div class="h-px flex-1 bg-[#42a7c6]/14"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="tab-institutions" class="tab-panel hidden grid md:grid-cols-2 gap-10 items-center" id="institutions">
-        <div>
-          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#ff9e18]/10 border border-[#ff9e18]/18 mb-6">
-            <span class="text-[#ff9e18] text-[11px] font-semibold uppercase tracking-widest">Institutions</span>
-          </div>
-          <h3 class="font-display font-bold text-[32px] lg:text-[40px] tracking-[-0.03em] text-white mb-4">Enterprise-grade DeFi infrastructure</h3>
-          <p class="text-white/52 leading-[1.72] mb-8">Scale your DeFi operations with institutional controls, comprehensive reporting, and the security posture your compliance team requires.</p>
-          <ul class="space-y-3.5 mb-8">
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#ff9e18]/14 border border-[#ff9e18]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#ff9e18]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">SOC 2 Type II certification (in progress)</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#ff9e18]/14 border border-[#ff9e18]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#ff9e18]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">Multi-sig wallet support and role-based access</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#ff9e18]/14 border border-[#ff9e18]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#ff9e18]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">Detailed P&L reporting with full fee transparency</span>
-            </li>
-          </ul>
-          <a href="#waitlist" class="btn-ghost inline-flex px-6 py-3 rounded-xl text-sm font-medium" style="border-color:rgba(255,158,24,0.3);color:#ff9e18;">Contact sales</a>
-        </div>
-        <div class="rounded-2xl border border-[#1c2d47] bg-[#0d1a2d] p-6"
-             style="box-shadow:0 16px 48px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.04);">
-          <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="rounded-xl bg-[#42a7c6]/[0.06] border border-[#42a7c6]/14 p-4">
-              <div class="text-xs text-white/38 mb-2">Total AUM</div>
-              <div class="font-display font-bold text-2xl text-white">$14.2M</div>
-              <div class="text-xs text-[#42a7c6] mt-1">↑ 3.2% this week</div>
-            </div>
-            <div class="rounded-xl bg-[#42a7c6]/[0.06] border border-[#42a7c6]/14 p-4">
-              <div class="text-xs text-white/38 mb-2">Active Strategies</div>
-              <div class="font-display font-bold text-2xl text-white">24</div>
-              <div class="text-xs text-white/38 mt-1">Across 6 protocols</div>
-            </div>
-          </div>
-          <div class="rounded-xl border border-[#1c2d47] p-4 space-y-3">
-            <div class="flex justify-between text-xs text-white/35 pb-2 border-b border-white/[0.055]">
-              <span>Protocol</span><span>Allocation</span><span>APY</span>
-            </div>
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-white/65">Uniswap v3</span><span class="text-white/42">$5.8M</span><span class="text-[#42a7c6]">12.4%</span>
-            </div>
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-white/65">Aave</span><span class="text-white/42">$4.1M</span><span class="text-[#42a7c6]">8.7%</span>
-            </div>
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-white/65">Curve</span><span class="text-white/42">$2.9M</span><span class="text-[#42a7c6]">6.2%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="tab-developers" class="tab-panel hidden grid md:grid-cols-2 gap-10 items-center" id="developers">
-        <div>
-          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#74c3d5]/10 border border-[#74c3d5]/18 mb-6">
-            <span class="text-[#74c3d5] text-[11px] font-semibold uppercase tracking-widest">Developers</span>
-          </div>
-          <h3 class="font-display font-bold text-[32px] lg:text-[40px] tracking-[-0.03em] text-white mb-4">Build on Mangrove's infrastructure</h3>
-          <p class="text-white/52 leading-[1.72] mb-8">Integrate Mangrove's execution engine, strategy primitives, and AI capabilities into your own applications with our developer-first API and SDK.</p>
-          <ul class="space-y-3.5 mb-8">
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#74c3d5]/14 border border-[#74c3d5]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#74c3d5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">REST and WebSocket APIs for real-time data</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#74c3d5]/14 border border-[#74c3d5]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#74c3d5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">TypeScript SDK with full type safety</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#74c3d5]/14 border border-[#74c3d5]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#74c3d5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">Comprehensive docs and sandbox environment</span>
-            </li>
-          </ul>
-          <a href="#" class="btn-ghost inline-flex px-6 py-3 rounded-xl text-sm font-medium" style="border-color:rgba(116,195,213,0.3);color:#74c3d5;">View documentation</a>
-        </div>
-        <!-- Code mockup -->
-        <div class="rounded-2xl border border-[#1c2d47] bg-[#060e1a] p-5 font-mono text-xs leading-6 overflow-hidden"
-             style="box-shadow:0 16px 48px rgba(0,0,0,0.52),inset 0 1px 0 rgba(255,255,255,0.03);">
-          <div class="flex items-center gap-2 mb-4 pb-3 border-b border-white/[0.055]">
-            <div class="flex gap-1.5">
-              <div class="w-2.5 h-2.5 rounded-full bg-white/10"></div>
-              <div class="w-2.5 h-2.5 rounded-full bg-white/10"></div>
-              <div class="w-2.5 h-2.5 rounded-full bg-white/10"></div>
-            </div>
-            <span class="text-white/28 text-[11px]">strategy.ts</span>
-          </div>
-          <div><span class="text-[#74c3d5]">import</span> <span class="text-white/55">{ Mangrove }</span> <span class="text-[#74c3d5]">from</span> <span class="text-[#ff9e18]">'@mangrove/sdk'</span></div>
-          <div class="mt-2"><span class="text-[#74c3d5]">const</span> <span class="text-white/78">mg</span> <span class="text-white/38">=</span> <span class="text-[#42a7c6]">new</span> <span class="text-white/65">Mangrove</span><span class="text-white/38">({</span></div>
-          <div class="pl-4"><span class="text-[#ff4713]">apiKey</span><span class="text-white/38">:</span> <span class="text-[#ff9e18]">process.env.MANGROVE_KEY</span></div>
-          <div><span class="text-white/38">})</span></div>
-          <div class="mt-2"><span class="text-[#74c3d5]">const</span> <span class="text-white/78">strategy</span> <span class="text-white/38">=</span> <span class="text-[#74c3d5]">await</span> <span class="text-white/65">mg.strategies</span></div>
-          <div class="pl-4"><span class="text-white/45">.create</span><span class="text-white/38">({</span></div>
-          <div class="pl-8"><span class="text-[#ff4713]">type</span><span class="text-white/38">:</span> <span class="text-[#ff9e18]">'range'</span><span class="text-white/38">,</span></div>
-          <div class="pl-8"><span class="text-[#ff4713]">pair</span><span class="text-white/38">:</span> <span class="text-[#ff9e18]">'ETH/USDC'</span><span class="text-white/38">,</span></div>
-          <div class="pl-8"><span class="text-[#ff4713]">maxDrawdown</span><span class="text-white/38">:</span> <span class="text-[#42a7c6]">0.10</span></div>
-          <div class="pl-4"><span class="text-white/38">})</span></div>
-          <div class="mt-2"><span class="text-white/25">// </span><span class="text-[#42a7c6]/55">Strategy deployed ✓</span></div>
-        </div>
-      </div>
-
-      <div id="tab-agents" class="tab-panel hidden grid md:grid-cols-2 gap-10 items-center" id="agents">
-        <div>
-          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#ff4713]/10 border border-[#ff4713]/18 mb-6">
-            <span class="text-[#ff4713] text-[11px] font-semibold uppercase tracking-widest">AI Agents</span>
-          </div>
-          <h3 class="font-display font-bold text-[32px] lg:text-[40px] tracking-[-0.03em] text-white mb-4">The trading layer for AI agents</h3>
-          <p class="text-white/52 leading-[1.72] mb-8">Give your AI agents the ability to execute DeFi strategies safely. Mangrove provides the guardrails, execution infrastructure, and audit trail your agent needs to operate autonomously.</p>
-          <ul class="space-y-3.5 mb-8">
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#ff4713]/14 border border-[#ff4713]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#ff4713]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">Structured tool definitions for LLM integration</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#ff4713]/14 border border-[#ff4713]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#ff4713]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">Spend limits and risk budgets enforced on-chain</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-full bg-[#ff4713]/14 border border-[#ff4713]/28 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-2.5 h-2.5 text-[#ff4713]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </div>
-              <span class="text-white/65 text-sm leading-[1.7]">Full audit trail of every agent action</span>
-            </li>
-          </ul>
-          <a href="#waitlist" class="btn-ghost inline-flex px-6 py-3 rounded-xl text-sm font-medium" style="border-color:rgba(255,71,19,0.3);color:#ff4713;">Join agent waitlist</a>
-        </div>
-        <div class="rounded-2xl border border-[#1c2d47] bg-[#0d1a2d] p-6"
-             style="box-shadow:0 16px 48px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.04);">
-          <div class="flex items-center gap-3 mb-5">
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#ff4713,#ff9e18)">
-              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2"/></svg>
-            </div>
-            <div>
-              <div class="text-sm font-semibold text-white font-display">Autonomous Agent</div>
-              <div class="text-xs text-white/38">ETH yield optimizer · Active</div>
-            </div>
-          </div>
-          <div class="space-y-3">
-            <div class="flex items-center justify-between text-xs border border-white/[0.055] rounded-lg p-3">
-              <span class="text-white/38">Risk budget used</span>
-              <div class="flex items-center gap-2">
-                <div class="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div class="h-full rounded-full" style="width:34%;background:linear-gradient(90deg,#42a7c6,#74c3d5)"></div>
-                </div>
-                <span class="text-white/55">34%</span>
-              </div>
-            </div>
-            <div class="flex items-center justify-between text-xs border border-white/[0.055] rounded-lg p-3">
-              <span class="text-white/38">Spend limit</span><span class="text-white/55">$50,000 / month</span>
-            </div>
-            <div class="flex items-center justify-between text-xs border border-white/[0.055] rounded-lg p-3">
-              <span class="text-white/38">Actions today</span><span class="text-white/55">12 trades · 3 rebalances</span>
-            </div>
-            <div class="p-3 rounded-lg bg-[#ff4713]/[0.055] border border-[#ff4713]/14">
-              <div class="text-xs text-[#ff4713]/75 font-medium mb-1">Latest action</div>
-              <div class="text-xs text-white/48">Moved $8,400 from Aave to Curve due to yield advantage (+2.1%)</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ FEATURES ═══ -->
-  <section class="py-24 bg-[#07111e]">
-    <div class="max-w-7xl mx-auto px-6">
-      <div class="text-center mb-16">
-        <h2 class="font-display font-bold text-[40px] lg:text-[52px] tracking-[-0.03em] text-white mb-4">Everything you need to trade smarter</h2>
-        <p class="text-white/48 text-lg max-w-2xl mx-auto leading-[1.72]">A complete platform from strategy creation to live execution — with the safety rails you'd expect from a professional trading desk.</p>
-      </div>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-        <div class="feat-card rounded-2xl p-7">
-          <div class="w-11 h-11 rounded-xl bg-[#42a7c6]/10 border border-[#42a7c6]/18 flex items-center justify-center mb-5">
-            <svg class="w-5 h-5 text-[#42a7c6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
-          </div>
-          <h3 class="font-display font-semibold text-lg text-white mb-2.5 tracking-[-0.02em]">AI Copilot</h3>
-          <p class="text-white/48 text-sm leading-[1.72]">Describe your strategy in plain English. The AI translates your intent into optimized on-chain logic — with embedded safety constraints you control.</p>
-        </div>
-        <div class="feat-card rounded-2xl p-7">
-          <div class="w-11 h-11 rounded-xl bg-[#ff9e18]/10 border border-[#ff9e18]/18 flex items-center justify-center mb-5">
-            <svg class="w-5 h-5 text-[#ff9e18]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
-          </div>
-          <h3 class="font-display font-semibold text-lg text-white mb-2.5 tracking-[-0.02em]">Risk Management</h3>
-          <p class="text-white/48 text-sm leading-[1.72]">Set drawdown limits, position caps, and stop-loss triggers. Your guardrails execute automatically — no manual intervention needed.</p>
-        </div>
-        <div class="feat-card rounded-2xl p-7">
-          <div class="w-11 h-11 rounded-xl bg-[#74c3d5]/10 border border-[#74c3d5]/18 flex items-center justify-center mb-5">
-            <svg class="w-5 h-5 text-[#74c3d5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
-          </div>
-          <h3 class="font-display font-semibold text-lg text-white mb-2.5 tracking-[-0.02em]">Backtesting Engine</h3>
-          <p class="text-white/48 text-sm leading-[1.72]">Simulate your strategy against years of historical market data before deploying a single dollar. Understand drawdowns and edge cases first.</p>
-        </div>
-        <div class="feat-card rounded-2xl p-7">
-          <div class="w-11 h-11 rounded-xl bg-[#ff4713]/10 border border-[#ff4713]/18 flex items-center justify-center mb-5">
-            <svg class="w-5 h-5 text-[#ff4713]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
-          </div>
-          <h3 class="font-display font-semibold text-lg text-white mb-2.5 tracking-[-0.02em]">Non-Custodial</h3>
-          <p class="text-white/48 text-sm leading-[1.72]">Mangrove never holds your assets. Funds stay in your self-custodied wallet and strategies execute through smart contract interactions only.</p>
-        </div>
-        <div class="feat-card rounded-2xl p-7">
-          <div class="w-11 h-11 rounded-xl bg-[#42a7c6]/10 border border-[#42a7c6]/18 flex items-center justify-center mb-5">
-            <svg class="w-5 h-5 text-[#42a7c6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25M9 16.5v.75m3-3v3M15 12v5.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-          </div>
-          <h3 class="font-display font-semibold text-lg text-white mb-2.5 tracking-[-0.02em]">Fee Transparency</h3>
-          <p class="text-white/48 text-sm leading-[1.72]">Automatically surface gas fees, slippage, spread, and price impact. Full P&L visibility with zero hidden costs.</p>
-        </div>
-        <div class="feat-card rounded-2xl p-7">
-          <div class="w-11 h-11 rounded-xl bg-[#ff9e18]/10 border border-[#ff9e18]/18 flex items-center justify-center mb-5">
-            <svg class="w-5 h-5 text-[#ff9e18]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
-          </div>
-          <h3 class="font-display font-semibold text-lg text-white mb-2.5 tracking-[-0.02em]">24/7 Execution</h3>
-          <p class="text-white/48 text-sm leading-[1.72]">Strategies execute the moment conditions are met, around the clock. Mangrove monitors markets continuously so you don't have to.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ TRUST ═══ -->
-  <section class="py-24" style="background:linear-gradient(180deg,#07111e 0%,#091520 50%,#07111e 100%)">
-    <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
-      <div>
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#42a7c6]/10 border border-[#42a7c6]/18 mb-6">
-          <span class="text-[#42a7c6] text-[11px] font-semibold uppercase tracking-widest">Security First</span>
-        </div>
-        <h2 class="font-display font-bold text-[40px] lg:text-[52px] tracking-[-0.03em] text-white mb-6">
-          Your assets.<br>Your control. Always.
-        </h2>
-        <p class="text-white/52 leading-[1.72] mb-10">
-          We built Mangrove on the principle that a platform should never need custody of your assets to deliver value. Every strategy executes through your wallet — Mangrove is the brain, not the vault.
-        </p>
-        <div class="space-y-4">
-          <div class="flex gap-4 items-start p-5 rounded-2xl bg-[#0d1a2d] border border-[#1c2d47]">
-            <div class="w-10 h-10 rounded-xl bg-[#42a7c6]/10 border border-[#42a7c6]/18 flex items-center justify-center flex-shrink-0">
-              <svg class="w-5 h-5 text-[#42a7c6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
-            </div>
-            <div>
-              <h4 class="font-display font-semibold text-white mb-1 text-[15px]">Non-Custodial by Design</h4>
-              <p class="text-white/42 text-sm leading-[1.7]">Mangrove never takes custody of your funds. Smart contracts interact directly with your wallet — we never have access to your keys.</p>
-            </div>
-          </div>
-          <div class="flex gap-4 items-start p-5 rounded-2xl bg-[#0d1a2d] border border-[#1c2d47]">
-            <div class="w-10 h-10 rounded-xl bg-[#ff9e18]/10 border border-[#ff9e18]/18 flex items-center justify-center flex-shrink-0">
-              <svg class="w-5 h-5 text-[#ff9e18]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg>
-            </div>
-            <div>
-              <h4 class="font-display font-semibold text-white mb-1 text-[15px]">SOC 2 Type II In Progress</h4>
-              <p class="text-white/42 text-sm leading-[1.7]">We're pursuing rigorous third-party certification covering security, availability, processing integrity, confidentiality, and privacy.</p>
-            </div>
-          </div>
-          <div class="flex gap-4 items-start p-5 rounded-2xl bg-[#0d1a2d] border border-[#1c2d47]">
-            <div class="w-10 h-10 rounded-xl bg-[#74c3d5]/10 border border-[#74c3d5]/18 flex items-center justify-center flex-shrink-0">
-              <svg class="w-5 h-5 text-[#74c3d5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg>
-            </div>
-            <div>
-              <h4 class="font-display font-semibold text-white mb-1 text-[15px]">Full Fee Transparency</h4>
-              <p class="text-white/42 text-sm leading-[1.7]">Every gas fee, slippage cost, spread, and exchange fee is automatically extracted and reported. No surprises, ever.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Security visual -->
-      <div class="relative">
-        <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(66,167,198,0.07),transparent)] pointer-events-none"></div>
-        <div class="rounded-3xl border border-[#1c2d47] bg-[#0d1a2d] p-10 text-center"
-             style="box-shadow:0 24px 64px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.04);">
-          <img src="brand_assets/Mangrove Final Logos/Mark/Mangrove-M-Full.svg"
-               alt="Mangrove" class="w-24 h-24 mx-auto mb-8"
-               style="filter:drop-shadow(0 0 28px rgba(66,167,198,0.28))">
-          <div class="grid grid-cols-2 gap-3 mb-6">
-            <div class="rounded-xl bg-[#42a7c6]/[0.055] border border-[#42a7c6]/12 p-4 text-left">
-              <div class="text-xs text-white/35 mb-1.5">Asset custody</div>
-              <div class="text-sm font-semibold text-[#42a7c6] font-display">Your wallet</div>
-            </div>
-            <div class="rounded-xl bg-[#42a7c6]/[0.055] border border-[#42a7c6]/12 p-4 text-left">
-              <div class="text-xs text-white/35 mb-1.5">Private keys</div>
-              <div class="text-sm font-semibold text-[#42a7c6] font-display">Always yours</div>
-            </div>
-            <div class="rounded-xl bg-[#42a7c6]/[0.055] border border-[#42a7c6]/12 p-4 text-left">
-              <div class="text-xs text-white/35 mb-1.5">Execution</div>
-              <div class="text-sm font-semibold text-[#42a7c6] font-display">Smart contracts</div>
-            </div>
-            <div class="rounded-xl bg-[#ff9e18]/[0.055] border border-[#ff9e18]/12 p-4 text-left">
-              <div class="text-xs text-white/35 mb-1.5">Certification</div>
-              <div class="text-sm font-semibold text-[#ff9e18] font-display">SOC 2 (WIP)</div>
-            </div>
-          </div>
-          <p class="text-white/28 text-xs">Mangrove is a strategy layer, not a custodian.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ WHO WE WORK WITH ═══ -->
-  <section class="py-20 bg-[#07111e] border-t border-white/[0.04]">
-    <div class="max-w-6xl mx-auto px-6">
-      <p class="text-center text-white/28 text-xs font-semibold uppercase tracking-[0.18em] mb-10">Who We Work With</p>
-      <div class="flex flex-wrap justify-center items-center gap-10 lg:gap-14">
-        <!-- Claude -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-1.08-.097-.314-.048C1.032 12.517.014 11.08 0 9.756c.014-1.404 1.055-2.777 2.808-2.99l.314-.032.555-.016h.039c.375-1.107 1.049-2.049 1.978-2.727a5.093 5.093 0 013.019-.985c.69 0 1.376.135 2.02.4.609-1.02 1.544-1.844 2.669-2.33A5.847 5.847 0 0115.153 0c1.32 0 2.591.44 3.618 1.236.91.703 1.58 1.667 1.932 2.757l.321.048c1.753.256 3.097 1.645 3.097 3.24a3.144 3.144 0 01-1.225 2.507l-.306.23-1.513.668-.023.04.023.04.234.044.539.037h.078c1.58.27 2.779 1.59 2.779 3.16 0 1.404-1.055 2.778-2.808 2.99l-.314.032-.555.016h-.094c-.375 1.107-1.048 2.049-1.978 2.727a5.093 5.093 0 01-3.019.985 4.842 4.842 0 01-2.02-.4c-.609 1.02-1.544 1.844-2.669 2.33a5.847 5.847 0 01-2.551.553c-1.32 0-2.591-.44-3.618-1.236-.91-.703-1.58-1.667-1.932-2.757l-.33-.048c-1.753-.256-3.097-1.645-3.097-3.24a3.146 3.146 0 011.225-2.507l.306-.23 1.513-.668.04-.023v-.04l-.04-.023z"/></svg>
-          <span class="text-white font-semibold text-[17px] tracking-tight">Claude</span>
-        </div>
-        <!-- CoinAPI -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <div class="w-5 h-5 rounded flex items-center justify-center bg-white/10 text-white text-[9px] font-bold">C</div>
-          <span class="text-white font-semibold text-[17px] tracking-tight">CoinAPI.io</span>
-        </div>
-        <!-- CoinGecko -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#8dc647"/><circle cx="9" cy="10" r="2" fill="white"/><circle cx="9" cy="10" r="1" fill="#3d3d3d"/><path d="M14 13c0 1.1-.9 2-2 2s-2-.9-2-2" stroke="white" stroke-width="1.2" fill="none" stroke-linecap="round"/><circle cx="15" cy="9" r="1.5" fill="white"/></svg>
-          <span class="text-white font-semibold text-[17px] tracking-tight">CoinGecko</span>
-        </div>
-        <!-- CoinMarketCap -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.374 0 12s5.374 12 12 12 12-5.374 12-12S18.626 0 12 0zm5.61 13.56c-.186.41-.576.65-1.004.65-.217 0-.437-.059-.635-.182l-2.128-1.315v.807c0 .98-.803 1.78-1.787 1.78s-1.787-.8-1.787-1.78V9.482l-2.11 1.305c-.198.123-.418.182-.635.182a1.146 1.146 0 01-1.003-.65 1.12 1.12 0 01.368-1.49l3.755-2.321A1.8 1.8 0 0112 6.25c.586 0 1.136.285 1.48.758l3.762 2.321c.508.315.666.978.368 1.232z"/></svg>
-          <span class="text-white font-semibold text-[17px] tracking-tight">CoinMarketCap</span>
-        </div>
-        <!-- 1inch -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <div class="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold bg-black border border-white/20">1"</div>
-          <span class="text-white font-semibold text-[17px] tracking-tight">1inch</span>
-        </div>
-        <!-- Grok -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M21.928 0H2.072A2.072 2.072 0 000 2.072v19.856A2.072 2.072 0 002.072 24h19.856A2.072 2.072 0 0024 21.928V2.072A2.072 2.072 0 0021.928 0zM8.347 17.25L4.5 6.75h2.156l2.625 7.922 2.625-7.922h2.156l-3.75 10.5H8.347zm11.153 0l-3.422-4.64 1.078-1.485 3.844 6.125H19.5z"/></svg>
-          <span class="text-white font-semibold text-[17px] tracking-tight">Grok</span>
-        </div>
-        <!-- Nansen -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
-          <span class="text-white font-semibold text-[17px] tracking-tight">Nansen</span>
-        </div>
-        <!-- OpenAI -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg>
-          <span class="text-white font-semibold text-[17px] tracking-tight">OpenAI</span>
-        </div>
-        <!-- Reddit -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
-          <span class="text-white font-semibold text-[17px] tracking-tight">Reddit</span>
-        </div>
-        <!-- Whale Alert -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <svg class="w-6 h-5 text-white" viewBox="0 0 32 24" fill="currentColor"><path d="M28 8c-2-4-6-6-10-6-3 0-5.5 1-7.5 2.5L4 10l-2 4 2 2h3c1 2.5 3.5 4 6 4 1.5 0 3-.5 4-1.5L22 22l4-2 3-6-1-6z" opacity="0.85"/></svg>
-          <span class="text-white font-semibold text-[17px] tracking-tight">Whale Alert</span>
-        </div>
-        <!-- xAI -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M17.304 3.541L13.768 13.42 10.232 3.541H7.5L12.5 17.5h2.536l5-13.959h-2.732zM6.196 3.541H3.464L8.464 17.5H11L6.196 3.541z"/></svg>
-          <span class="text-white font-semibold text-[17px] tracking-tight">xAI</span>
-        </div>
-        <!-- Anthropic -->
-        <div class="partner flex items-center gap-2.5 cursor-default select-none">
-          <span class="text-white font-semibold text-[17px] tracking-tight">ANTHROPIC</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ CTA / WAITLIST ═══ -->
-  <section id="waitlist" class="py-32 relative overflow-hidden bg-[#07111e] grid-pat">
-    <div class="absolute inset-0 bg-[radial-gradient(ellipse_75%_55%_at_50%_50%,rgba(66,167,198,0.075),transparent)] pointer-events-none"></div>
-    <div class="max-w-2xl mx-auto px-6 text-center relative z-10">
-      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#ff9e18]/22 bg-[#ff9e18]/[0.07] mb-8">
-        <span class="w-1.5 h-1.5 rounded-full bg-[#ff9e18] pulse-dot"></span>
-        <span class="text-[#ff9e18] text-xs font-medium tracking-wide">Now accepting early access</span>
-      </div>
-      <h2 class="font-display font-bold text-[48px] lg:text-[60px] tracking-[-0.03em] text-white mb-5">
-        Start trading smarter today
+<!-- ═══════════════════════════════ AUDIENCE CARDS ═══════════════════════ -->
+<section id="product" class="section-pad" style="position:relative;">
+  <div class="section-divider"></div>
+  <div class="container-xl">
+    <div style="text-align:center; margin-bottom:4rem;">
+      <span class="eyebrow-label reveal" style="color:var(--teal-lt);">Built for everyone</span>
+      <h2 class="section-h2 reveal reveal-d1">
+        One platform,&nbsp;<em class="text-gradient-teal" style="font-style:italic;">four audiences</em>
       </h2>
-      <p class="text-white/48 text-lg leading-[1.72] mb-10 max-w-xl mx-auto">
-        Join thousands of traders and institutions using Mangrove to automate their DeFi strategies — safely, transparently, and on their own terms.
+      <p class="section-sub reveal reveal-d2" style="max-width:520px; margin-left:auto; margin-right:auto;">
+        Whether you're a day trader, an institution, a developer, or an AI agent — Mangrove has a surface for you.
       </p>
-      <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-5" onsubmit="handleSubmit(event)">
-        <input type="email" placeholder="your@email.com" required
-               class="email-input flex-1 px-4 py-3 rounded-xl text-sm">
-        <button type="submit" class="btn-primary px-6 py-3 rounded-xl text-sm font-semibold whitespace-nowrap">
-          Get Early Access
-        </button>
-      </form>
-      <p class="text-white/22 text-xs">No spam. Cancel anytime. Available on Web, iOS, and Android.</p>
     </div>
-  </section>
 
-  <!-- ═══ FOOTER ═══ -->
-  <footer class="border-t border-white/[0.055] bg-[#040c16] py-16">
-    <div class="max-w-7xl mx-auto px-6">
-      <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
-        <div class="lg:col-span-2">
-          <img src="brand_assets/Mangrove Final Logos/Horiz/Mangrove-Horiz-FullColor-WhiteType.svg"
-               alt="Mangrove" class="h-6 w-auto mb-4">
-          <p class="text-white/32 text-sm leading-[1.72] max-w-xs">
-            Automated DeFi trading strategies, powered by AI. Non-custodial by design.
-          </p>
+    <div class="audience-grid">
+
+      <!-- Retail -->
+      <div class="audience-card reveal">
+        <div class="card-hover-glow" style="background:radial-gradient(ellipse at 30% 0%, rgba(66,167,198,0.12) 0%, transparent 65%);"></div>
+        <div class="card-top-line" style="background:linear-gradient(90deg,transparent,rgba(66,167,198,0.6),transparent);"></div>
+        <div class="card-icon" style="background:rgba(66,167,198,0.1); border:1px solid rgba(66,167,198,0.22); color:#42a7c6;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M2 17l5-5.5 4 3 5-7 3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="7" r="2.5" stroke="currentColor" stroke-width="1.3"/></svg>
         </div>
         <div>
-          <h5 class="font-display font-semibold text-white/72 text-sm mb-4">Platform</h5>
-          <ul class="space-y-3">
-            <li><a href="#" class="nav-link text-sm">Strategy Builder</a></li>
-            <li><a href="#" class="nav-link text-sm">Backtesting</a></li>
-            <li><a href="#" class="nav-link text-sm">Risk Management</a></li>
-            <li><a href="#" class="nav-link text-sm">Analytics</a></li>
-          </ul>
+          <span class="card-label" style="color:#42a7c6;">Retail Traders</span>
+          <h3 class="card-h3">Trade smarter, not harder</h3>
+        </div>
+        <p class="card-body">Build and backtest strategies without writing a line of code. The AI copilot spots opportunities — risk controls protect your downside automatically.</p>
+        <ul class="card-features">
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#42a7c6" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#42a7c6" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> No-code strategy builder</li>
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#42a7c6" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#42a7c6" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> AI market analysis</li>
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#42a7c6" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#42a7c6" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Auto stop-loss &amp; sizing</li>
+        </ul>
+        <a href="#product" class="card-link" style="color:#42a7c6;">Explore <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+
+      <!-- Institutions -->
+      <div class="audience-card reveal reveal-d1">
+        <div class="card-hover-glow" style="background:radial-gradient(ellipse at 30% 0%, rgba(116,195,213,0.1) 0%, transparent 65%);"></div>
+        <div class="card-top-line" style="background:linear-gradient(90deg,transparent,rgba(116,195,213,0.6),transparent);"></div>
+        <div class="card-icon" style="background:rgba(116,195,213,0.1); border:1px solid rgba(116,195,213,0.22); color:#74c3d5;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="10" width="18" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M6 10V7a5 5 0 0110 0v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="11" cy="15" r="1.5" fill="currentColor"/></svg>
         </div>
         <div>
-          <h5 class="font-display font-semibold text-white/72 text-sm mb-4">Company</h5>
-          <ul class="space-y-3">
-            <li><a href="#" class="nav-link text-sm">About</a></li>
-            <li><a href="#" class="nav-link text-sm">Blog</a></li>
-            <li><a href="#" class="nav-link text-sm">Careers</a></li>
-            <li><a href="#" class="nav-link text-sm">Press</a></li>
-          </ul>
+          <span class="card-label" style="color:#74c3d5;">Institutions</span>
+          <h3 class="card-h3">Institutional grade, on-chain</h3>
+        </div>
+        <p class="card-body">Programmatic execution, multi-sig controls, and real-time compliance monitoring. Audit trails baked in. No counterparty risk.</p>
+        <ul class="card-features">
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#74c3d5" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#74c3d5" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Multi-sig treasury controls</li>
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#74c3d5" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#74c3d5" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Compliance monitoring</li>
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#74c3d5" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#74c3d5" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Custom reporting API</li>
+        </ul>
+        <a href="#product" class="card-link" style="color:#74c3d5;">Explore <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+
+      <!-- Developers -->
+      <div class="audience-card reveal reveal-d2">
+        <div class="card-hover-glow" style="background:radial-gradient(ellipse at 30% 0%, rgba(255,158,24,0.1) 0%, transparent 65%);"></div>
+        <div class="card-top-line" style="background:linear-gradient(90deg,transparent,rgba(255,158,24,0.6),transparent);"></div>
+        <div class="card-icon" style="background:rgba(255,158,24,0.1); border:1px solid rgba(255,158,24,0.22); color:#ff9e18;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M6 7l-4 4 4 4M16 7l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 4l-3.5 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         </div>
         <div>
-          <h5 class="font-display font-semibold text-white/72 text-sm mb-4">Legal</h5>
-          <ul class="space-y-3">
-            <li><a href="#" class="nav-link text-sm">Privacy Policy</a></li>
-            <li><a href="#" class="nav-link text-sm">Terms of Service</a></li>
-            <li><a href="#" class="nav-link text-sm">Cookie Policy</a></li>
-          </ul>
+          <span class="card-label" style="color:#ff9e18;">Developers</span>
+          <h3 class="card-h3">Build the next trading primitive</h3>
+        </div>
+        <p class="card-body">Open APIs, webhooks, and a full SDK. Deploy strategies as on-chain modules. Monetize your logic — earn fees every time others use it.</p>
+        <ul class="card-features">
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#ff9e18" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#ff9e18" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> REST + WebSocket APIs</li>
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#ff9e18" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#ff9e18" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Deploy &amp; monetize strategies</li>
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#ff9e18" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#ff9e18" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> On-chain composable modules</li>
+        </ul>
+        <a href="#developers" class="card-link" style="color:#ff9e18;">Explore <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+
+      <!-- AI Agents -->
+      <div class="audience-card reveal reveal-d3">
+        <div class="card-hover-glow" style="background:radial-gradient(ellipse at 30% 0%, rgba(255,71,19,0.1) 0%, transparent 65%);"></div>
+        <div class="card-top-line" style="background:linear-gradient(90deg,transparent,rgba(255,71,19,0.6),transparent);"></div>
+        <div class="card-icon" style="background:rgba(255,71,19,0.1); border:1px solid rgba(255,71,19,0.22); color:#ff4713;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="5" y="3" width="12" height="11" rx="3" stroke="currentColor" stroke-width="1.3"/><circle cx="8.5" cy="9" r="1.2" fill="currentColor"/><circle cx="13.5" cy="9" r="1.2" fill="currentColor"/><path d="M8.5 14.5v4M13.5 14.5v4M6 18.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <span class="card-label" style="color:#ff4713;">AI Agents</span>
+          <h3 class="card-h3">A trading layer built for agents</h3>
+        </div>
+        <p class="card-body">Permissioned API keys, intent-based execution, on-chain verification. Agents operate within hard risk bounds you define — no runaway trades.</p>
+        <ul class="card-features">
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#ff4713" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#ff4713" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Intent-based trade API</li>
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#ff4713" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#ff4713" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Hard position limits</li>
+          <li class="card-feature"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#ff4713" stroke-opacity="0.4"/><path d="M4.5 7l2 2 3-3" stroke="#ff4713" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> On-chain agent attestation</li>
+        </ul>
+        <a href="#product" class="card-link" style="color:#ff4713;">Explore <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ HOW IT WORKS ══════════════════════════ -->
+<section id="how-it-works" class="section-pad" style="position:relative;">
+  <div class="section-divider"></div>
+  <div class="container-xl">
+    <div style="margin-bottom:5rem;">
+      <span class="eyebrow-label reveal" style="color:var(--teal-lt);">How it works</span>
+      <h2 class="section-h2 reveal reveal-d1">
+        From idea to <em class="text-gradient-warm" style="font-style:italic;">on-chain</em> in minutes
+      </h2>
+    </div>
+
+    <div class="steps-list">
+
+      <!-- Step 1: Build -->
+      <div class="step-grid reveal">
+        <div>
+          <div style="display:flex; align-items:center;">
+            <span class="step-num">01</span>
+            <span class="step-pill">Build</span>
+          </div>
+          <h3 class="step-h3">Compose your strategy</h3>
+          <p class="step-body">Drag and drop conditions, triggers, and actions. No code required. Define entry signals, position sizing, and exit rules — all in plain language the AI understands.</p>
+        </div>
+        <div class="step-visual" id="step1-visual">
+          <div class="visual-chrome">Strategy Builder — Momentum Breakout v2</div>
+          <div class="rule-block" style="background:rgba(66,167,198,0.06); border:1px solid rgba(66,167,198,0.15);">
+            <span class="rule-kw" style="color:#42a7c6;">WHEN</span>
+            <span class="rule-text">ETH 4h RSI crosses above 60</span>
+          </div>
+          <div class="rule-block" style="background:rgba(116,195,213,0.06); border:1px solid rgba(116,195,213,0.12);">
+            <span class="rule-kw" style="color:#74c3d5;">AND</span>
+            <span class="rule-text">Volume spike &gt; 1.5× 20-day avg</span>
+          </div>
+          <div class="rule-block" style="background:rgba(255,158,24,0.06); border:1px solid rgba(255,158,24,0.15);">
+            <span class="rule-kw" style="color:#ff9e18;">BUY</span>
+            <span class="rule-text">2% of portfolio — limit order</span>
+          </div>
+          <div class="rule-block" style="background:rgba(255,158,24,0.06); border:1px solid rgba(255,158,24,0.12);">
+            <span class="rule-kw" style="color:#ff9e18;">STOP</span>
+            <span class="rule-text">Trail 3% from entry</span>
+          </div>
         </div>
       </div>
-      <div class="border-t border-white/[0.05] pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <p class="text-white/22 text-xs">© 2025 Mangrove AI. All rights reserved.</p>
-        <div class="flex items-center gap-5">
-          <a href="#" class="nav-link" aria-label="X / Twitter">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.259 5.631 5.905-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          </a>
-          <a href="#" class="nav-link" aria-label="LinkedIn">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-          </a>
-          <a href="#" class="nav-link" aria-label="Discord">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.09.12 18.12.143 18.14c2.053 1.508 4.041 2.423 5.993 3.029a.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028c1.961-.607 3.95-1.522 6.002-3.029a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
-          </a>
+
+      <!-- Step 2: Backtest -->
+      <div class="step-grid reveal" style="direction:rtl;">
+        <div style="direction:ltr;">
+          <div style="display:flex; align-items:center;">
+            <span class="step-num">02</span>
+            <span class="step-pill">Backtest</span>
+          </div>
+          <h3 class="step-h3">Validate against history</h3>
+          <p class="step-body">Run your strategy across years of on-chain data in seconds. Inspect every trade, stress-test through volatile regimes, and tune parameters with the AI copilot.</p>
+        </div>
+        <div class="step-visual" id="step2-visual" style="direction:ltr;">
+          <div class="visual-chrome">Backtest — Jan 2022 → Jan 2025</div>
+          <div style="position:relative; height:90px;">
+            <svg width="100%" height="100%" viewBox="0 0 400 90" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="btFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#42a7c6" stop-opacity="0.15"/>
+                  <stop offset="100%" stop-color="#42a7c6" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path class="step-backtest-path bench" d="M0,78 C30,73 60,68 100,70 C140,72 160,62 200,60 C240,58 280,52 320,48 C360,44 390,42 400,40" fill="none" stroke="rgba(66,167,198,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <path class="step-backtest-path" d="M0,78 C20,70 50,55 90,46 C120,38 140,50 170,34 C200,18 230,26 260,14 C290,4 320,8 360,3 C380,1 395,2 400,1" fill="none" stroke="#42a7c6" stroke-width="2"/>
+              <path d="M0,78 C20,70 50,55 90,46 C120,38 140,50 170,34 C200,18 230,26 260,14 C290,4 320,8 360,3 C380,1 395,2 400,1 L400,90 L0,90 Z" fill="url(#btFill)" opacity="0.7"/>
+            </svg>
+          </div>
+          <div class="backtest-stats">
+            <div><div class="bt-stat-val">+312%</div><div class="bt-stat-lbl">Total return</div></div>
+            <div><div class="bt-stat-val">+118%</div><div class="bt-stat-lbl">vs ETH hold</div></div>
+            <div><div class="bt-stat-val">−8.4%</div><div class="bt-stat-lbl">Max DD</div></div>
+            <div><div class="bt-stat-val">247</div><div class="bt-stat-lbl">Trades</div></div>
+          </div>
         </div>
       </div>
+
+      <!-- Step 3: Deploy -->
+      <div class="step-grid reveal">
+        <div>
+          <div style="display:flex; align-items:center;">
+            <span class="step-num">03</span>
+            <span class="step-pill">Deploy</span>
+          </div>
+          <h3 class="step-h3">Go live with one click</h3>
+          <p class="step-body">Deploy directly to the chain. Your strategy runs in a non-custodial smart contract — you keep full control of funds. Monitor live P&amp;L, override any trade, pause instantly.</p>
+        </div>
+        <div class="step-visual">
+          <div class="visual-chrome" style="display:flex; align-items:center; justify-content:space-between;">
+            <span>Live Strategy — Momentum Breakout v2</span>
+            <span class="status-active">● Active</span>
+          </div>
+          <div class="deploy-grid">
+            <div class="deploy-cell"><div class="deploy-val" style="color:#74c3d5;">$24,830</div><div class="deploy-lbl">Portfolio value</div></div>
+            <div class="deploy-cell"><div class="deploy-val" style="color:#74c3d5;">+$312 (+1.3%)</div><div class="deploy-lbl">P&L today</div></div>
+            <div class="deploy-cell"><div class="deploy-val">2</div><div class="deploy-lbl">Open positions</div></div>
+            <div class="deploy-cell"><div class="deploy-val">38% of limit</div><div class="deploy-lbl">Risk usage</div></div>
+          </div>
+          <div class="deploy-btns">
+            <button class="deploy-btn" style="background:rgba(66,167,198,0.1); border-color:rgba(66,167,198,0.2); color:#74c3d5;">Override trade</button>
+            <button class="deploy-btn" style="background:rgba(255,71,19,0.08); border-color:rgba(255,71,19,0.2); color:#ff4713;">Pause strategy</button>
+          </div>
+        </div>
+      </div>
+
     </div>
-  </footer>
+  </div>
+</section>
 
-  <script>
-    function switchTab(id, btn) {
-      document.querySelectorAll('.tab-panel').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('tab-' + id).classList.remove('hidden');
-      btn.classList.add('active');
-    }
+<!-- ═══════════════════════════════ FEATURES GRID ════════════════════════ -->
+<section id="features" class="section-pad" style="position:relative;">
+  <div class="section-divider"></div>
+  <div class="container-xl">
+    <div style="margin-bottom:4rem;">
+      <span class="eyebrow-label reveal" style="color:var(--teal-lt);">Core capabilities</span>
+      <h2 class="section-h2 reveal reveal-d1">
+        The full stack, <em class="text-gradient-teal" style="font-style:italic;">actually integrated</em>
+      </h2>
+    </div>
 
-    function handleSubmit(e) {
-      e.preventDefault();
-      const btn = e.target.querySelector('button[type="submit"]');
-      btn.textContent = "You're on the list!";
-      btn.disabled = true;
-      btn.style.opacity = '0.72';
-    }
+    <div class="features-grid">
 
-    document.querySelectorAll('a[href^="#"]').forEach(a => {
-      a.addEventListener('click', e => {
-        const id = a.getAttribute('href').slice(1);
-        if (!id) return;
-        const el = document.getElementById(id);
-        if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); }
-      });
+      <!-- Large: No-code builder -->
+      <div class="feat-card large reveal">
+        <div class="feat-hover-glow" style="background:radial-gradient(ellipse at 20% 0%, rgba(66,167,198,0.07) 0%, transparent 60%);"></div>
+        <div class="feat-icon" style="background:rgba(66,167,198,0.1); border:1px solid rgba(66,167,198,0.2); color:#42a7c6;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="2" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.3"/><rect x="12" y="2" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="12" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.3"/><rect x="12" y="12" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.3"/></svg>
+        </div>
+        <div class="feat-proof" style="color:#42a7c6;">Used by 1,200+ beta traders</div>
+        <h3 class="feat-h3">No-code strategy builder</h3>
+        <p class="feat-body">Build complex multi-leg strategies by connecting condition blocks — no programming needed. Supports cross-chain assets, custom indicators, and multi-step logic.</p>
+        <blockquote class="feat-quote" style="border-left:2px solid rgba(66,167,198,0.3);">
+          "I want to buy ETH when RSI is oversold on the daily and BTC dominance is falling" → deployed in 4 minutes.
+        </blockquote>
+      </div>
+
+      <!-- AI copilot -->
+      <div class="feat-card reveal reveal-d1" style="grid-column: 2; grid-row: 1;">
+        <div class="feat-hover-glow" style="background:radial-gradient(ellipse at 20% 0%, rgba(116,195,213,0.08) 0%, transparent 65%);"></div>
+        <div class="feat-icon" style="background:rgba(116,195,213,0.1); border:1px solid rgba(116,195,213,0.2); color:#74c3d5;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2a4 4 0 014 4v1h1a3 3 0 010 6h-1v1a4 4 0 01-8 0v-1H6a3 3 0 010-6h1V6a4 4 0 014-4z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8.5" cy="9.5" r="1" fill="currentColor"/><circle cx="13.5" cy="9.5" r="1" fill="currentColor"/><path d="M8.5 12.5s1 2 2.5 2 2.5-2 2.5-2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+        </div>
+        <div class="feat-proof" style="color:#74c3d5;">Reduces iteration time by ~60%</div>
+        <h3 class="feat-h3">AI copilot</h3>
+        <p class="feat-body" style="font-size:0.8125rem;">Explains what your strategy is doing, flags edge-case risks, and suggests improvements based on backtest results.</p>
+        <blockquote class="feat-quote" style="font-size:0.75rem; border-left:2px solid rgba(116,195,213,0.3);">
+          "Your stop is too tight for this ATR. During 2022 it would have exited 31 trades early."
+        </blockquote>
+      </div>
+
+      <!-- Risk controls -->
+      <div class="feat-card reveal reveal-d2" style="grid-column: 3; grid-row: 1;">
+        <div class="feat-hover-glow" style="background:radial-gradient(ellipse at 20% 0%, rgba(255,158,24,0.08) 0%, transparent 65%);"></div>
+        <div class="feat-icon" style="background:rgba(255,158,24,0.1); border:1px solid rgba(255,158,24,0.2); color:#ff9e18;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2L3 6v5c0 5 4 9 8 10 4-1 8-5 8-10V6l-8-4z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 11l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-proof" style="color:#ff9e18;">On-chain enforcement</div>
+        <h3 class="feat-h3">Risk controls</h3>
+        <p class="feat-body" style="font-size:0.8125rem;">Max drawdown limits, position caps, and cooldown periods enforced at the smart contract level. Not configurable in the moment of panic.</p>
+        <blockquote class="feat-quote" style="font-size:0.75rem; border-left:2px solid rgba(255,158,24,0.3);">
+          Hard max: 5% per position, 15% daily halt, no leverage unless unlocked.
+        </blockquote>
+      </div>
+
+      <!-- Monetization -->
+      <div class="feat-card reveal reveal-d1" style="grid-column: 2 / span 2;">
+        <div class="feat-hover-glow" style="background:radial-gradient(ellipse at 20% 0%, rgba(255,71,19,0.08) 0%, transparent 65%);"></div>
+        <div class="feat-icon" style="background:rgba(255,71,19,0.1); border:1px solid rgba(255,71,19,0.2); color:#ff4713;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="1.3"/><path d="M11 6v10M8.5 8.5h4a1.5 1.5 0 010 3h-3a1.5 1.5 0 000 3h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="feat-proof" style="color:#ff4713;">Developers earn from day one</div>
+        <h3 class="feat-h3">Monetization</h3>
+        <p class="feat-body" style="font-size:0.8125rem;">Publish your strategy to the marketplace. Earn a performance fee every time another user's capital follows it. On-chain, no intermediaries.</p>
+        <blockquote class="feat-quote" style="font-size:0.75rem; border-left:2px solid rgba(255,71,19,0.3);">
+          Top strategy on beta earned $4,200 in 30 days with zero marketing spend.
+        </blockquote>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ TRUST STRIP ══════════════════════════ -->
+<section id="trust" class="section-pad" style="position:relative;">
+  <div class="section-divider"></div>
+  <div class="container-xl">
+    <p class="reveal" style="text-align:center; font-family:var(--ff-body); font-size:0.7rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:rgba(116,195,213,0.5); margin-bottom:2.5rem;">Built on trust by design</p>
+
+    <div class="trust-grid">
+
+      <div class="trust-card reveal">
+        <div class="card-top-line" style="background:linear-gradient(90deg,transparent,rgba(66,167,198,0.5),transparent);"></div>
+        <div class="trust-icon" style="background:rgba(66,167,198,0.1); border:1px solid rgba(66,167,198,0.2); color:#42a7c6;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L3 5.5v4.5c0 4 3.2 7.5 7 8.5 3.8-1 7-4.5 7-8.5V5.5L10 2z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="trust-label">Non-custodial</div>
+          <p class="trust-body">Your keys, your funds — always. Strategies execute from a smart contract you own. We never touch your assets.</p>
+        </div>
+      </div>
+
+      <div class="trust-card reveal reveal-d1">
+        <div class="card-top-line" style="background:linear-gradient(90deg,transparent,rgba(116,195,213,0.5),transparent);"></div>
+        <div class="trust-icon" style="background:rgba(116,195,213,0.1); border:1px solid rgba(116,195,213,0.2); color:#74c3d5;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.3"/><path d="M6 10h8M6 7h5M6 13h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="trust-label">SOC 2 Type II in progress</div>
+          <p class="trust-body">Our infrastructure undergoes continuous security monitoring. SOC 2 audit expected Q4 2025.</p>
+        </div>
+      </div>
+
+      <div class="trust-card reveal reveal-d2">
+        <div class="card-top-line" style="background:linear-gradient(90deg,transparent,rgba(255,158,24,0.5),transparent);"></div>
+        <div class="trust-icon" style="background:rgba(255,158,24,0.1); border:1px solid rgba(255,158,24,0.2); color:#ff9e18;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 9h10M3 13h7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="15" cy="14" r="3.5" stroke="currentColor" stroke-width="1.3"/><path d="M13.5 14l1 1 2-2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="trust-label">Transparent metrics</div>
+          <p class="trust-body">All strategy performance is verifiable on-chain. No cherry-picked results, no black-box backtests.</p>
+        </div>
+      </div>
+
+      <div class="trust-card reveal reveal-d3">
+        <div class="card-top-line" style="background:linear-gradient(90deg,transparent,rgba(255,71,19,0.5),transparent);"></div>
+        <div class="trust-icon" style="background:rgba(255,71,19,0.1); border:1px solid rgba(255,71,19,0.2); color:#ff4713;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M15.5 4l1.5 1.5L19.5 2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="trust-label">Reputation system</div>
+          <p class="trust-body">Strategy publishers build an on-chain reputation score. Filter by verified track record, not promises.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ LOGO WALL ════════════════════════════ -->
+<section id="ecosystem" class="section-pad" style="position:relative;">
+  <div class="section-divider"></div>
+  <div class="container-xl">
+    <p class="reveal" style="text-align:center; font-family:var(--ff-body); font-size:0.7rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:rgba(116,195,213,0.45); margin-bottom:3.5rem;">The Mangrove ecosystem</p>
+
+    <div style="display:flex; flex-direction:column; gap:2.5rem;">
+
+      <div class="logo-row reveal">
+        <div class="logo-row-header"><span class="logo-row-label">Integrations</span><div class="logo-row-line"></div></div>
+        <div class="logo-row-pills">
+          <span class="logo-pill">Uniswap</span>
+          <span class="logo-pill">Aave</span>
+          <span class="logo-pill">Chainlink</span>
+          <span class="logo-pill">1inch</span>
+          <span class="logo-pill">Curve</span>
+          <span class="logo-pill">dYdX</span>
+        </div>
+      </div>
+
+      <div class="logo-row reveal reveal-d1">
+        <div class="logo-row-header"><span class="logo-row-label">Built on</span><div class="logo-row-line"></div></div>
+        <div class="logo-row-pills">
+          <span class="logo-pill">Ethereum</span>
+          <span class="logo-pill">Arbitrum</span>
+          <span class="logo-pill">Base</span>
+          <span class="logo-pill">Optimism</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ DEVELOPER TEASER ════════════════════ -->
+<section id="developers" class="section-pad" style="position:relative;">
+  <div class="section-divider"></div>
+  <!-- Background glow -->
+  <div style="position:absolute; right:0; top:50%; transform:translateY(-50%); width:400px; height:400px; background:radial-gradient(circle, rgba(255,158,24,0.05) 0%, transparent 70%); filter:blur(80px); pointer-events:none;"></div>
+
+  <div class="container-xl" style="position:relative;">
+    <div class="dev-grid">
+
+      <!-- Copy -->
+      <div class="reveal">
+        <span class="eyebrow-label" style="color:var(--orange);">For developers</span>
+        <h2 class="section-h2">
+          An API that <em class="text-gradient-warm" style="font-style:italic;">thinks ahead</em>
+        </h2>
+        <p style="margin-top:1.25rem; font-family:var(--ff-body); font-size:1rem; line-height:1.75; color:var(--ink-55); max-width:420px;">
+          Full REST + WebSocket access. On-chain composable modules you can publish and monetize. Risk controls enforced at the contract layer — not just the client.
+        </p>
+
+        <ul class="dev-features">
+          <li class="dev-feature"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="7" stroke="#ff9e18" stroke-opacity="0.3"/><path d="M5 7.5l2 2 3-3" stroke="#ff9e18" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> REST + WebSocket real-time API</li>
+          <li class="dev-feature"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="7" stroke="#ff9e18" stroke-opacity="0.3"/><path d="M5 7.5l2 2 3-3" stroke="#ff9e18" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Webhook callbacks on any trade event</li>
+          <li class="dev-feature"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="7" stroke="#ff9e18" stroke-opacity="0.3"/><path d="M5 7.5l2 2 3-3" stroke="#ff9e18" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> On-chain strategy modules (ERC-compatible)</li>
+          <li class="dev-feature"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="7" stroke="#ff9e18" stroke-opacity="0.3"/><path d="M5 7.5l2 2 3-3" stroke="#ff9e18" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Monetize — earn fees when others use your strategy</li>
+          <li class="dev-feature"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="7" stroke="#ff9e18" stroke-opacity="0.3"/><path d="M5 7.5l2 2 3-3" stroke="#ff9e18" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Testnet sandbox with forked mainnet data</li>
+        </ul>
+
+        <div>
+          <a href="#developers" class="dev-btn">Read the docs →</a>
+          <a href="#developers" class="dev-link">View SDK on GitHub</a>
+        </div>
+      </div>
+
+      <!-- Code block -->
+      <div class="code-block reveal reveal-d2">
+        <div class="code-chrome">
+          <div class="flex gap-1.5" style="display:flex; gap:6px;">
+            <div style="width:10px; height:10px; border-radius:50%; background:#ff5f56;"></div>
+            <div style="width:10px; height:10px; border-radius:50%; background:#ffbd2e;"></div>
+            <div style="width:10px; height:10px; border-radius:50%; background:#27c93f;"></div>
+          </div>
+          <span class="code-filename">strategy.ts</span>
+          <button class="code-copy" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre class="code-pre"><code><span class="kw">import</span> mangrove <span class="kw">from</span> <span class="str">"@mangrove/sdk"</span>;
+
+<span class="kw">const</span> client = <span class="kw">new</span> mangrove.Client({
+  apiKey: process.env.MANGROVE_API_KEY,
+  network: <span class="str">"arbitrum"</span>,
+});
+
+<span class="cmt">// Define a strategy with hard risk bounds</span>
+<span class="kw">const</span> strategy = <span class="kw">await</span> client.strategies.create({
+  name: <span class="str">"ETH Momentum"</span>,
+  rules: [
+    { condition: <span class="str">"rsi_4h > 60"</span>, action: <span class="str">"buy"</span>, size: <span class="str">"2%"</span> },
+    { condition: <span class="str">"price_change_1h &lt; -5%"</span>, action: <span class="str">"sell_all"</span> },
+  ],
+  riskControls: {
+    maxDrawdown: <span class="num">0.08</span>,       <span class="cmt">// 8% hard limit</span>
+    maxPositionSize: <span class="num">0.05</span>,   <span class="cmt">// 5% per asset</span>
+    noLeverage: <span class="kw">true</span>,
+  },
+});
+
+<span class="cmt">// Deploy on-chain — returns tx hash</span>
+<span class="kw">const</span> { txHash } = <span class="kw">await</span> strategy.deploy();
+console.log(`Live at ${txHash}`);</code></pre>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ FINAL CTA ════════════════════════════ -->
+<section id="waitlist-section" style="position:relative; text-align:center; padding: 8rem 0;">
+  <div class="section-divider"></div>
+  <div class="cta-glow"></div>
+
+  <div class="container-xl" style="position:relative;">
+    <div class="reveal">
+      <span class="eyebrow-label" style="color:var(--teal-lt); text-align:center; display:block;">Open beta — Q3 2025</span>
+      <h2 class="cta-h2">
+        Ready to trade<br>
+        <em class="text-gradient-teal" style="font-style:italic;">with intention?</em>
+      </h2>
+      <p class="cta-sub">Join 2,400+ traders already on the waitlist. No custody. No complexity. Just strategy.</p>
+
+      <div class="cta-form" id="cta-form-wrap">
+        <input type="email" class="input-email" id="cta-email" placeholder="Enter your email" autocomplete="email" required style="font-size:1rem; padding:16px 20px;">
+        <button class="btn-primary" onclick="submitWaitlist('cta')" style="padding:16px 28px; font-size:1rem;">Join waitlist</button>
+      </div>
+      <div class="form-success" id="cta-success" style="justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="9" fill="#42a7c6" fill-opacity="0.2"/><path d="M5 9l3 3 5-5" stroke="#74c3d5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        You're on the list — we'll be in touch.
+      </div>
+      <p style="margin-top:1.25rem; font-size:0.75rem; color:var(--ink-25);">No credit card required. Your funds stay yours — always.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ FOOTER ══════════════════════════════ -->
+<footer>
+  <div class="container-xl">
+    <div class="footer-grid">
+
+      <!-- Brand -->
+      <div class="footer-brand">
+        <a href="/" class="footer-logo">
+          <svg width="24" height="24" viewBox="0 0 792 792" fill="none"><path d="M762.6 592.5h-77.8c0-73.9-42.3-118.2-91.2-169.6-52.8-55.4-112.7-118.3-112.7-223.3h77.8c0 73.9 42.3 118.3 91.2 169.6 52.8 55.4 112.7 118.3 112.7 223.3Z" fill="#ff9e18"/><path d="M323.7 592.5h-77.8c0-105 59.9-167.8 112.7-223.3 49-51.4 91.2-95.8 91.2-169.6h77.8c0 105-59.9 167.8-112.7 223.3-48.9 51.4-91.2 95.7-91.2 169.6Z" fill="#ff4713"/><path d="M546 592.5h-77.8c0-73.9-42.3-118.2-91.2-169.6-52.8-55.4-112.7-118.3-112.7-223.3h77.8c0 73.9 42.3 118.3 91.2 169.6 52.8 55.4 112.7 118.3 112.7 223.3Z" fill="#74c3d5"/><path d="M107.2 592.5H29.4c0-105 59.9-167.8 112.7-223.3 49-51.4 91.2-95.8 91.2-169.6h77.8c0 105-59.9 167.8-112.7 223.3-48.9 51.4-91.2 95.7-91.2 169.6Z" fill="#42a7c6"/></svg>
+          <span class="footer-logo-name">Mangrove</span>
+        </a>
+        <p class="footer-desc">Non-custodial on-chain trading with built-in risk controls and AI-powered strategy execution.</p>
+        <div class="footer-socials">
+          <a href="#" class="social-btn" aria-label="X / Twitter"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M11 1.3h2.1L8.7 6.2 14 12.7H9.8L6.6 8.6 3 12.7H.9l4.7-5.4L0 1.3h4.3l2.9 3.9L11 1.3zm-.7 10.2h1.2L3.8 2.4H2.6L10.3 11.5z"/></svg></a>
+          <a href="#" class="social-btn" aria-label="Discord"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M11.9 2a11.4 11.4 0 00-3-.8l-.1.2c-.4.1-.7.2-.9.3a10.5 10.5 0 00-3 0l-.9-.3-.1-.2c-1 .2-2 .5-3 1.1A12.3 12.3 0 000 9.8a11.4 11.4 0 003.4 1.8l.7-1.3a7.5 7.5 0 01-1.1-.5l.3-.3a8.1 8.1 0 007.4 0l.3.3a7.5 7.5 0 01-1.1.5l.7 1.3A11.4 11.4 0 0014 9.8 12.3 12.3 0 0011.9 2zM4.7 8.2c-.6 0-1.1-.6-1.1-1.3S4 5.6 4.7 5.6s1.1.6 1.1 1.3-.5 1.3-1.1 1.3zm4.6 0c-.6 0-1.1-.6-1.1-1.3S8.7 5.6 9.3 5.6s1.2.6 1.1 1.3-.5 1.3-1.1 1.3z"/></svg></a>
+          <a href="#" class="social-btn" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 0C3.1 0 0 3.1 0 7c0 3.1 2 5.7 4.8 6.6.4.1.5-.2.5-.4v-1.3c-2 .5-2.4-.9-2.4-.9-.3-.8-.8-1-.8-1-.7-.5.1-.5.1-.5.7.1 1.1.7 1.1.7.6 1 1.7.7 2 .6.1-.4.3-.7.4-1a6 6 0 01-3.1-3.5 3.5 3.5 0 010-3.2c.4-.5.7-1.3.7-1.8 0 0 .6-.2 2 .7A6.6 6.6 0 017 2.6c.6 0 1.2.1 1.7.2 1.4-.9 2-.7 2-.7.1.5.3 1.3.7 1.8a3.5 3.5 0 010 3.2A6 6 0 0110.1 11c.1.3.4.7.4 1.3v1.9c0 .2.1.4.5.4C12 13.7 14 11.1 14 7 14 3.1 10.9 0 7 0z"/></svg></a>
+        </div>
+      </div>
+
+      <!-- Platform -->
+      <div>
+        <p class="footer-col-head">Platform</p>
+        <ul class="footer-col-links">
+          <li><a href="#product">For retail</a></li>
+          <li><a href="#product">For institutions</a></li>
+          <li><a href="#developers">For developers</a></li>
+          <li><a href="#product">For AI agents</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+        </ul>
+      </div>
+
+      <!-- Resources -->
+      <div>
+        <p class="footer-col-head">Resources</p>
+        <ul class="footer-col-links">
+          <li><a href="#developers">Documentation</a></li>
+          <li><a href="#developers">API reference</a></li>
+          <li><a href="#developers">SDK on GitHub</a></li>
+          <li><a href="#learn">Learn</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </div>
+
+      <!-- Company -->
+      <div>
+        <p class="footer-col-head">Company</p>
+        <ul class="footer-col-links">
+          <li><a href="#company">About</a></li>
+          <li><a href="#learn">Blog</a></li>
+          <li><a href="#company">Careers</a></li>
+          <li><a href="#company">Press</a></li>
+          <li><a href="#company">Contact</a></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2025 Mangrove Technologies Inc. All rights reserved.</p>
+      <div class="footer-legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Risk Disclosure</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════ JAVASCRIPT ══════════════════════════ -->
+<script>
+  // ── Nav scroll state ──
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 24);
+  }, { passive: true });
+
+  // ── Mobile menu ──
+  const hamburger = document.getElementById('nav-hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  hamburger.addEventListener('click', () => {
+    const open = mobileMenu.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', open);
+    hamburger.innerHTML = open
+      ? `<svg width="22" height="22" viewBox="0 0 22 22" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M4.3 4.3a1 1 0 011.4 0L11 9.6l5.3-5.3a1 1 0 111.4 1.4L12.4 11l5.3 5.3a1 1 0 01-1.4 1.4L11 12.4l-5.3 5.3a1 1 0 01-1.4-1.4L9.6 11 4.3 5.7a1 1 0 010-1.4z"/></svg>`
+      : `<svg width="22" height="22" viewBox="0 0 22 22" fill="currentColor"><rect x="2" y="5" width="18" height="2" rx="1"/><rect x="2" y="10" width="18" height="2" rx="1"/><rect x="2" y="15" width="12" height="2" rx="1"/></svg>`;
+  });
+  mobileMenu.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      mobileMenu.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+      hamburger.innerHTML = `<svg width="22" height="22" viewBox="0 0 22 22" fill="currentColor"><rect x="2" y="5" width="18" height="2" rx="1"/><rect x="2" y="10" width="18" height="2" rx="1"/><rect x="2" y="15" width="12" height="2" rx="1"/></svg>`;
     });
-  </script>
+  });
+
+  // ── Waitlist forms ──
+  function submitWaitlist(id) {
+    const emailEl = document.getElementById(id === 'hero' ? 'hero-email' : 'cta-email');
+    const wrapEl  = document.getElementById(id === 'hero' ? 'hero-form-wrap' : 'cta-form-wrap');
+    const succEl  = document.getElementById(id === 'hero' ? 'hero-success' : 'cta-success');
+    if (!emailEl.value || !emailEl.value.includes('@')) {
+      emailEl.focus();
+      emailEl.style.borderColor = 'rgba(255,71,19,0.5)';
+      setTimeout(() => { emailEl.style.borderColor = ''; }, 1500);
+      return;
+    }
+    wrapEl.style.display = 'none';
+    succEl.classList.add('visible');
+  }
+  // Also handle Enter key
+  ['hero-email', 'cta-email'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') submitWaitlist(id === 'hero-email' ? 'hero' : 'cta'); });
+  });
+
+  // ── Copy code button ──
+  function copyCode(btn) {
+    const code = btn.closest('.code-block').querySelector('code').innerText;
+    navigator.clipboard.writeText(code).then(() => {
+      btn.textContent = 'copied!';
+      setTimeout(() => { btn.textContent = 'copy'; }, 2000);
+    });
+  }
+
+  // ── Intersection Observer for reveal animations ──
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '-40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+  // ── Hero mockup chart animation ──
+  const mockupObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('animate'), 400);
+        mockupObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  const heroMockup = document.getElementById('hero-mockup');
+  if (heroMockup) mockupObserver.observe(heroMockup);
+
+  // ── Backtest chart animation ──
+  const backtestObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate');
+        backtestObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  const step2Visual = document.getElementById('step2-visual');
+  if (step2Visual) backtestObserver.observe(step2Visual);
+
+</script>
+
+<!-- Dithering WebGL shader — inline, no CDN -->
+<script>
+(function () {
+  var canvas = document.getElementById('hero-dithering-canvas');
+  if (!canvas) return;
+  var gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false })
+          || canvas.getContext('experimental-webgl', { alpha: true, premultipliedAlpha: false });
+  if (!gl) return;
+
+  var VS = [
+    'attribute vec2 a_pos;',
+    'void main(){gl_Position=vec4(a_pos,0.0,1.0);}',
+  ].join('\n');
+
+  var FS = [
+    'precision highp float;',
+    'uniform float u_t;',
+    'uniform vec2 u_res;',
+    'uniform sampler2D u_bayer;',
+
+    // value noise
+    'float h21(vec2 p){p=fract(p*vec2(127.1,311.7));p+=dot(p,p+34.23);return fract(p.x*p.y);}',
+    'float vnoise(vec2 p){',
+    '  vec2 i=floor(p),f=fract(p),u=f*f*(3.0-2.0*f);',
+    '  return mix(mix(h21(i),h21(i+vec2(1,0)),u.x),mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),u.x),u.y);',
+    '}',
+    'float fbm(vec2 p){',
+    '  float v=0.0;',
+    '  v+=0.5000*vnoise(p);p=p*2.02+vec2(3.1,1.7);',
+    '  v+=0.2500*vnoise(p);p=p*2.03+vec2(1.5,8.3);',
+    '  v+=0.1250*vnoise(p);p=p*2.01+vec2(7.2,2.9);',
+    '  v+=0.0625*vnoise(p);',
+    '  return v/0.9375;',
+    '}',
+
+    'void main(){',
+    '  vec2 uv=gl_FragCoord.xy/u_res;',
+    '  float t=u_t*0.06;',
+
+    // plain FBM — no domain warp, just smooth organic variation
+    '  float density=fbm(uv*5.0+vec2(0.8*t,0.5*t));',
+    // scale to [0, 0.42] max → at peak only ~6/16 Bayer cells lit = sparse isolated dots
+    '  density=density*0.42;',
+
+    // 4×4 Bayer lookup — sample at texel centres
+    '  vec2 bUV=(mod(floor(gl_FragCoord.xy),4.0)+0.5)/4.0;',
+    '  float threshold=texture2D(u_bayer,bUV).r;',
+    '  float alpha=density>threshold?1.0:0.0;',
+
+    '  gl_FragColor=vec4(1.0,1.0,1.0,alpha*max(density,0.15));',
+    '}',
+  ].join('\n');
+
+  function mkShader(type, src) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(s)); return null; }
+    return s;
+  }
+  var prog = gl.createProgram();
+  gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(prog)); return; }
+
+  // full-screen quad
+  var buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  var posLoc = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+  // 4×4 Bayer matrix texture
+  var bayerTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, bayerTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 4, 4, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE,
+    new Uint8Array([0,128,32,160, 192,64,224,96, 48,176,16,144, 240,112,208,80]));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+  var uT   = gl.getUniformLocation(prog, 'u_t');
+  var uRes = gl.getUniformLocation(prog, 'u_res');
+  var uBayer = gl.getUniformLocation(prog, 'u_bayer');
+
+  var hero = document.getElementById('hero');
+  function resize() {
+    var w = hero.offsetWidth, h = hero.offsetHeight;
+    canvas.width = w; canvas.height = h;
+    gl.viewport(0, 0, w, h);
+  }
+  resize();
+  new ResizeObserver(resize).observe(hero);
+
+  var t0 = null;
+  function frame(ts) {
+    if (!t0) t0 = ts;
+    var t = (ts - t0) / 1000;
+    gl.useProgram(prog);
+    gl.uniform1f(uT, t);
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.uniform1i(uBayer, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, bayerTex);
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}());
+</script>
+
 </body>
 </html>
